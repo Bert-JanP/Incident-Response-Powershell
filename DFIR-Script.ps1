@@ -1,0 +1,221 @@
+$ASCIIBanner = @"
+  _____                                           _              _   _     _____    ______   _____   _____  
+ |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
+ | |__) |   ___   __      __   ___   _ __   ___  | |__     ___  | | | |   | |  | | | |__      | |   | |__) |
+ |  ___/   / _ \  \ \ /\ / /  / _ \ | '__| / __| | '_ \   / _ \ | | | |   | |  | | |  __|     | |   |  _  / 
+ | |      | (_) |  \ V  V /  |  __/ | |    \__ \ | | | | |  __/ | | | |   | |__| | | |       _| |_  | | \ \ 
+ |_|       \___/    \_/\_/    \___| |_|    |___/ |_| |_|  \___| |_| |_|   |_____/  |_|      |_____| |_|  \_\
+"@
+Write-Host $ASCIIBanner
+Write-Host "`n"
+Write-Host "By twitter: @BertJanCyber, Github: Bert-JanP"
+Write-Host "===========================================`n"
+
+$IsAdmin = ([Security.Principal.WindowsPrincipal] `
+        [Security.Principal.WindowsIdentity]::GetCurrent() `
+).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if ($IsAdmin) {
+    Write-Host "DFIR Session starting as Administrator..."
+}
+else {
+    Write-Host "No Administrator session detected. For the best performance run as Administrator. Not all items can be collected..."
+    Write-Host "DFIR Session starting..."
+}
+
+Write-Host "Creating output directory..."
+$CurrentPath = Get-Location
+$ExecutionTime = $(get-date -f yyyy-MM-dd)
+$FolderCreation = "$CurrentPath\DFIR-$env:computername-$ExecutionTime"
+mkdir -Force $FolderCreation | Out-Null
+Write-Host "Output directory created: $FolderCreation..."
+
+function Get-IPInfo {
+    Write-Host "Collecting local ip info..."
+    $Ipinfoutput = "$FolderCreation\ipinfo.txt"
+    Get-NetIPAddress | Out-File -Force -FilePath $Ipinfoutput
+}
+function Get-ShadowCopies {
+    Write-Host "Collecting Shadow Copies..."
+    $ShadowCopy = "$FolderCreation\ShadowCopies.txt"
+    Get-CimInstance Win32_ShadowCopy | Out-File -Force -FilePath $ShadowCopy
+}
+
+function Get-OpenConnections {
+    Write-Host "Collecting Open Connections..."
+    $ConnectionFolder = "$FolderCreation\Connections"
+    mkdir -Force $ConnectionFolder | Out-Null
+    $Ipinfoutput = "$ConnectionFolder\OpenConnections.txt"
+    Get-NetTCPConnection -State Established | Out-File -Force -FilePath $Ipinfoutput
+}
+
+function Get-AutoRunInfo {
+    Write-Host "Collecting AutoRun info..."
+    $AutoRunFolder = "$FolderCreation\Persistence"
+    mkdir -Force $AutoRunFolder | Out-Null
+    $RegKeyOutput = "$AutoRunFolder\AutoRunInfo.txt"
+    Get-CimInstance Win32_StartupCommand | Select-Object Name, command, Location, User | Format-List | Out-File -Force -FilePath $RegKeyOutput
+}
+
+function Get-InstalledDrivers {
+    Write-Host "Collecting Installed Drivers..."
+    $AutoRunFolder = "$FolderCreation\Persistence"
+    $RegKeyOutput = "$AutoRunFolder\InstalledDrivers.txt"
+    driverquery | Out-File -Force -FilePath $RegKeyOutput
+}
+
+function Get-ActiveUsers {
+    Write-Host "Collecting Active users..."
+    $UserFolder = "$FolderCreation\UserInformation"
+    mkdir -Force $UserFolder | Out-Null
+    $ActiveUserOutput = "$UserFolder\ActiveUsers.txt"
+    query user /server:$server | Out-File -Force -FilePath $ActiveUserOutput
+}
+
+function Get-LocalUsers {
+    Write-Host "Collecting Local users..."
+    $UserFolder = "$FolderCreation\UserInformation"
+    $ActiveUserOutput = "$UserFolder\LocalUsers.txt"
+    Get-LocalUser | Format-Table | Out-File -Force -FilePath $ActiveUserOutput
+}
+
+function Get-ActiveProcesses {
+    Write-Host "Collecting Active Processes..."
+    $ProcessFolder = "$FolderCreation\ProcessInformation"
+    mkdir -Force $ProcessFolder | Out-Null
+    $ProcessOutput = "$ProcessFolder\ProcessList.txt"
+    Get-Process | Format-Table | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-ActiveProcessesPriority {
+    Write-Host "Collecting Active Processes Priority..."
+    $ProcessFolder = "$FolderCreation\ProcessInformation"
+    mkdir -Force $ProcessFolder | Out-Null
+    $ProcessOutput = "$ProcessFolder\ProcessPriorityList.txt"
+    $AllProcesses = Get-Process
+    $AllProcesses | Get-Process | Format-Table -View priority | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-ProcessCommandlineInfo {
+    Write-Host "Collecting Commandline Processes Information..."
+    $ProcessFolder = "$FolderCreation\ProcessInformation"
+    $ProcessOutput = "$ProcessFolder\CommandlineInformation.txt"
+    Get-WmiObject Win32_Process | Select-Object Name, ProcessId, CommandLine, Path | Format-List | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-ActiveProcessesDetailed {
+    Write-Host "Collecting Active Processes Details..."
+    $ProcessFolder = "$FolderCreation\ProcessInformation"
+    mkdir -Force $ProcessFolder | Out-Null
+    $ProcessOutput = "$ProcessFolder\ProcessListDetailed.txt"
+    Get-Process | Format-List * | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-SecurityEventCount {
+    Write-Host "Collecting stats Security Events last 48 hours..."
+    $SecurityEvents = "$FolderCreation\SecurityEvents"
+    mkdir -Force $SecurityEvents | Out-Null
+    $ProcessOutput = "$SecurityEvents\EventCount.txt"
+    $SecurirtyEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
+    $SecurirtyEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-SecurityEvents {
+    Write-Host "Collecting Security Events last 48 hours..."
+    $SecurityEvents = "$FolderCreation\SecurityEvents"
+    mkdir -Force $SecurityEvents | Out-Null
+    $ProcessOutput = "$SecurityEvents\SecurityEvents.txt"
+    get-eventlog security -After (Get-Date).AddDays(-2) | Format-List * | Out-File -Force -FilePath $ProcessOutput
+}
+function Get-OfficeConnections {
+    Write-Host "Collecting connections made from office applciations..."
+    $ConnectionFolder = "$FolderCreation\Connections"
+    $OfficeConnection = "$ConnectionFolder\ConnectionsMadeByOffice.txt"
+    Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+}
+
+function Get-NetworkShares {
+    Write-Host "Collecting Active Network Shares..."
+    $ConnectionFolder = "$FolderCreation\Connections"
+    $ProcessOutput = "$ConnectionFolder\NetworkShares.txt"
+    Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-SMBShares {
+    Write-Host "Collecting SMB Shares..."
+    $ConnectionFolder = "$FolderCreation\Connections"
+    $ProcessOutput = "$ConnectionFolder\SMBShares.txt"
+    Get-SmbShare | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-RDPSessions {
+    Write-Host "Collecting RDS Sessions..."
+    $ConnectionFolder = "$FolderCreation\Connections"
+    $ProcessOutput = "$ConnectionFolder\RDPSessions.txt"
+    qwinsta /server:localhost | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-RemotelyOpenedFiles {
+    Write-Host "Collecting Remotly Opened Files..."
+    $ConnectionFolder = "$FolderCreation\Connections"
+    $ProcessOutput = "$ConnectionFolder\RemotelyOpenedFiles.txt"
+    openfiles | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-DNSCache {
+    Write-Host "Collecting DNS Cache..."
+    $ConnectionFolder = "$FolderCreation\Connections"
+    $ProcessOutput = "$ConnectionFolder\DNSCache.txt"
+    Get-DnsClientCache | Format-List | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-PowershellHistory {
+    Write-Host "Collecting Powershell History..."
+    $PowershellHistoryOutput = "$FolderCreation\PowershellHistory.txt"
+    history | Out-File -Force -FilePath $PowershellHistoryOutput
+}
+
+
+function Zip-Results {
+    Write-Host "Write results to $FolderCreation.zip..."
+    Compress-Archive -Force -LiteralPath $FolderCreation -DestinationPath "$FolderCreation.zip"
+}
+
+#Run all functions that do not require admin priviliges
+function Run-WithoutAdminPrivilege {
+    Get-IPInfo
+    Get-OpenConnections
+    Get-AutoRunInfo
+    Get-ActiveUsers
+    Get-LocalUsers
+    Get-ActiveProcesses
+    Get-ActiveProcessesPriority
+    Get-ActiveProcessesDetailed
+    Get-OfficeConnections
+    Get-NetworkShares
+    Get-ProcessCommandlineInfo
+    Get-SMBShares
+    Get-RDPSessions
+    Get-PowershellHistory
+    Get-DNSCache
+    Get-InstalledDrivers
+}
+
+#Run all functions that do require admin priviliges
+Function Run-WithAdminPrivilges {
+    Get-SecurityEventCount
+    Get-SecurityEvents
+    Get-RemotelyOpenedFiles
+    Get-ShadowCopies
+}
+
+if ($IsAdmin) {
+    Run-WithoutAdminPrivilege
+    Run-WithAdminPrivilges
+}
+else {
+    Run-WithoutAdminPrivilege
+}
+
+Zip-Results
+
