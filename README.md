@@ -1,4 +1,4 @@
-# Powershell Digital Forensics & Incident Response (DFIR)[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Powershell%20DFIR!&url=https://github.com/Bert-JanP/Powershell-DFIR)
+# Powershell Digital Forensics & Incident Response (DFIR)[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Powershell%20DFIR!&url=https://github.com/Bert-JanP/Incident-Response-Powershell)
 
 This page contains two Powershell DFIR solutions. The first is a complete incident response script. The second is a page where all the individual incident response commands are listed. A default version of powershell can be used, without any additional modules.
 
