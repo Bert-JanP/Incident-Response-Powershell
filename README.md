@@ -17,6 +17,9 @@ The [DFIR script](./DFIR-Script.ps1) collects information from multiple sources 
 - Powershell History
 - DNS Cache
 - Installed Drivers
+- Installed Software
+- Running Services
+- Scheduled Tasks
 
 For the best experience run the script as admin, then the following items will also be collected:
 - Windows Security Events
