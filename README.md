@@ -30,6 +30,7 @@ The [DFIR Commands page](./DFIR-Commands.md) contains invidividual powershell co
 - Windows Security Events
 - Processes
 - User & Group Information
+- Applications
 - File Analysis
 - Collect IOC Information
 

@@ -97,6 +97,33 @@ Stop-Process -Name "Teams"
 Stop-Process -ID 666
 ```
 
+### Scheduled Task List
+```
+Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Format-List
+```
+
+### Scheduled Task List Run Status
+```
+Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo
+```
+
+
+# Applications
+
+### Installed Software (RegistryKey Based)
+```
+$InstalledSoftware = Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall"
+foreach($obj in $InstalledSoftware){write-host $obj.GetValue('DisplayName') -NoNewline; write-host " - " -NoNewline; write-host $obj.GetValue('DisplayVersion')}
+```
+### Recently Installed Software (Windows Event Logs)
+```
+Get-WinEvent -ProviderName msiinstaller | where id -eq 1033 | select timecreated,message | FL *
+```
+
+### Running Services
+```
+Get-Service | Where-Object {$_.Status -eq "Running"} | format-list
+``
 
 # File Analysis
 

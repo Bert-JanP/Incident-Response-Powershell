@@ -175,6 +175,36 @@ function Get-PowershellHistory {
     history | Out-File -Force -FilePath $PowershellHistoryOutput
 }
 
+function Get-RecentlyInstalledSoftwareEventLogs {
+    Write-Host "Collecting Recently Installed Software EventLogs..."
+    $ApplicationFolder = "$FolderCreation\Applications"
+    mkdir -Force $ApplicationFolder | Out-Null
+    $ProcessOutput = "$ApplicationFolder\RecentlyInstalledSoftwareEventLogs.txt"
+    Get-WinEvent -ProviderName msiinstaller | where id -eq 1033 | select timecreated,message | FL *| Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-RunningServices {
+    Write-Host "Collecting Running Services..."
+    $ApplicationFolder = "$FolderCreation\Applications"
+    $ProcessOutput = "$ApplicationFolder\RecentlyInstalledSoftwareEventLogs.txt"
+    Get-Service | Where-Object {$_.Status -eq "Running"} | format-list | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-ScheduledTasks {
+    Write-Host "Collecting Scheduled Tasks..."
+    $ScheduledTaskFolder = "$FolderCreation\ScheduledTask"
+    mkdir -Force $ScheduledTaskFolder| Out-Null
+    $ProcessOutput = "$ScheduledTaskFolder\ScheduledTasksList.txt"
+    Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Format-List | Out-File -Force -FilePath $ProcessOutput
+}
+
+function Get-ScheduledTasksRunInfo {
+    Write-Host "Collecting Scheduled Tasks Run Info..."
+    $ScheduledTaskFolder = "$FolderCreation\ScheduledTask"
+    $ProcessOutput = "$ScheduledTaskFolder\ScheduledTasksListRunInfo.txt"
+    Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | Out-File -Force -FilePath $ProcessOutput
+}
+
 
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
@@ -198,7 +228,11 @@ function Run-WithoutAdminPrivilege {
     Get-RDPSessions
     Get-PowershellHistory
     Get-DNSCache
-    Get-InstalledDrivers
+    Get-InstalledDrivers    
+    Get-RecentlyInstalledSoftwareEventLogs
+    Get-RunningServices
+    Get-ScheduledTasks
+    Get-ScheduledTasksRunInfo
 }
 
 #Run all functions that do require admin priviliges
