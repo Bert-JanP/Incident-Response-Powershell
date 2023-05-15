@@ -82,33 +82,29 @@ function Get-LocalUsers {
 function Get-ActiveProcesses {
     Write-Host "Collecting Active Processes..."
     $ProcessFolder = "$FolderCreation\ProcessInformation"
-    mkdir -Force $ProcessFolder | Out-Null
-    $ProcessOutput = "$ProcessFolder\ProcessList.txt"
-    Get-Process | Format-Table | Out-File -Force -FilePath $ProcessOutput
-}
+    New-Item -Path $ProcessFolder -ItemType Directory -Force | Out-Null
+    $UniqueProcessHashOutput = "$ProcessFolder\UniqueProcessHash.csv"
+    $ProcessListOutput = "$ProcessFolder\ProcessList.csv"
 
-function Get-ActiveProcessesPriority {
-    Write-Host "Collecting Active Processes Priority..."
-    $ProcessFolder = "$FolderCreation\ProcessInformation"
-    mkdir -Force $ProcessFolder | Out-Null
-    $ProcessOutput = "$ProcessFolder\ProcessPriorityList.txt"
-    $AllProcesses = Get-Process
-    $AllProcesses | Get-Process | Format-Table -View priority | Out-File -Force -FilePath $ProcessOutput
-}
+    $processes_list = @()
+    foreach ($process in (Get-WmiObject Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId))
+    {
+        $process_obj = New-Object PSCustomObject
+        if ($process.ExecutablePath -ne $null)
+        {
+            $hash = (Get-FileHash -Algorithm SHA256 -Path $process.ExecutablePath).Hash 
+            $process_obj | Add-Member -NotePropertyName Proc_Hash -NotePropertyValue $hash
+            $process_obj | Add-Member -NotePropertyName Proc_Name -NotePropertyValue $process.Name
+            $process_obj | Add-Member -NotePropertyName Proc_Path -NotePropertyValue $process.ExecutablePath
+            $process_obj | Add-Member -NotePropertyName Proc_CommandLine -NotePropertyValue $process.CommandLine
+            $process_obj | Add-Member -NotePropertyName Proc_ParentProcessId -NotePropertyValue $process.ParentProcessId
+            $process_obj | Add-Member -NotePropertyName Proc_ProcessId -NotePropertyValue $process.ProcessId
+            $processes_list += $process_obj
+        }   
+    }
 
-function Get-ProcessCommandlineInfo {
-    Write-Host "Collecting Commandline Processes Information..."
-    $ProcessFolder = "$FolderCreation\ProcessInformation"
-    $ProcessOutput = "$ProcessFolder\CommandlineInformation.txt"
-    Get-WmiObject Win32_Process | Select-Object Name, ProcessId, CommandLine, Path | Format-List | Out-File -Force -FilePath $ProcessOutput
-}
-
-function Get-ActiveProcessesDetailed {
-    Write-Host "Collecting Active Processes Details..."
-    $ProcessFolder = "$FolderCreation\ProcessInformation"
-    mkdir -Force $ProcessFolder | Out-Null
-    $ProcessOutput = "$ProcessFolder\ProcessListDetailed.txt"
-    Get-Process | Format-List * | Out-File -Force -FilePath $ProcessOutput
+    ($processes_list | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
+    ($processes_list | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput
 }
 
 function Get-SecurityEventCount {
@@ -219,11 +215,8 @@ function Run-WithoutAdminPrivilege {
     Get-ActiveUsers
     Get-LocalUsers
     Get-ActiveProcesses
-    Get-ActiveProcessesPriority
-    Get-ActiveProcessesDetailed
     Get-OfficeConnections
     Get-NetworkShares
-    Get-ProcessCommandlineInfo
     Get-SMBShares
     Get-RDPSessions
     Get-PowershellHistory
