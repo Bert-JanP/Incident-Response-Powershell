@@ -201,6 +201,15 @@ function Get-ScheduledTasksRunInfo {
     Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | Out-File -Force -FilePath $ProcessOutput
 }
 
+function Get-USBConnections {
+    Write-Host "Collecting USB Connections..."
+    $ProcessFolder = "$FolderCreation\USBInformation"
+    New-Item -Path $ProcessFolder -ItemType Directory -Force | Out-Null
+    $USBConnectionsOutput = "$ProcessFolder\USBConnections.csv"
+
+    (Get-WmiObject -Class Win32_USBControllerDevice | Select-Object -Property Antecedent, Dependent -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $USBConnectionsOutput
+}
+
 
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
