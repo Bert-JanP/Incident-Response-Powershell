@@ -203,8 +203,8 @@ function Get-ScheduledTasksRunInfo {
 
 function Get-USBConnections {
     Write-Host "Collecting USB Connections..."
-    $ProcessFolder = "$FolderCreation\USBInformation"
-    New-Item -Path $ProcessFolder -ItemType Directory -Force | Out-Null
+    $USBFolder = "$FolderCreation\USBInformation"
+    New-Item -Path $USBFolder -ItemType Directory -Force | Out-Null
     $USBConnectionsOutput = "$ProcessFolder\USBConnections.csv"
 
     (Get-WmiObject -Class Win32_USBControllerDevice | Select-Object -Property Antecedent, Dependent -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $USBConnectionsOutput
