@@ -201,13 +201,13 @@ function Get-ScheduledTasksRunInfo {
     Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | Out-File -Force -FilePath $ProcessOutput
 }
 
-function Get-USBConnections {
+function Get-ConnectedDevices {
     Write-Host "Collecting USB Connections..."
-    $USBFolder = "$FolderCreation\USBInformation"
-    New-Item -Path $USBFolder -ItemType Directory -Force | Out-Null
-    $USBConnectionsOutput = "$ProcessFolder\USBConnections.csv"
+    $DeviceFolder = "$FolderCreation\ConnectedDevices"
+    New-Item -Path $DeviceFolder -ItemType Directory -Force | Out-Null
+    $ConnectedDevicesOutput = "$DeviceFolder\ConnectedDevices.csv"
 
-    (Get-WmiObject -Class Win32_USBControllerDevice | Select-Object -Property Antecedent, Dependent -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $USBConnectionsOutput
+    (Get-PnpDevice -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
 }
 
 
