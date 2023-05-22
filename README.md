@@ -13,7 +13,7 @@ The [DFIR script](./DFIR-Script.ps1) collects information from multiple sources 
 - Active SMB Shares
 - RDP Sessions
 - Active Processes
-- Commandline Information
+- Active USB Connections
 - Powershell History
 - DNS Cache
 - Installed Drivers

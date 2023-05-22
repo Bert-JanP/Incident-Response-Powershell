@@ -201,6 +201,15 @@ function Get-ScheduledTasksRunInfo {
     Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | Out-File -Force -FilePath $ProcessOutput
 }
 
+function Get-ConnectedDevices {
+    Write-Host "Collecting USB Connections..."
+    $DeviceFolder = "$FolderCreation\ConnectedDevices"
+    New-Item -Path $DeviceFolder -ItemType Directory -Force | Out-Null
+    $ConnectedDevicesOutput = "$DeviceFolder\ConnectedDevices.csv"
+
+    (Get-PnpDevice -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
+}
+
 
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
@@ -226,6 +235,7 @@ function Run-WithoutAdminPrivilege {
     Get-RunningServices
     Get-ScheduledTasks
     Get-ScheduledTasksRunInfo
+    Get-USBConnections
 }
 
 #Run all functions that do require admin priviliges
