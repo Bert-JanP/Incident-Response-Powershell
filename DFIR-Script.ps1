@@ -222,7 +222,7 @@ function Get-ScheduledTasksRunInfo {
 }
 
 function Get-ConnectedDevices {
-    Write-Host "Collecting USB Connections..."
+    Write-Host "Collecting Information about Connected Devices..."
     $DeviceFolder = "$FolderCreation\ConnectedDevices"
     New-Item -Path $DeviceFolder -ItemType Directory -Force | Out-Null
     $ConnectedDevicesOutput = "$DeviceFolder\ConnectedDevices.csv"
@@ -255,7 +255,7 @@ function Run-WithoutAdminPrivilege {
     Get-RunningServices
     Get-ScheduledTasks
     Get-ScheduledTasksRunInfo
-    Get-USBConnections
+    Get-ConnectedDevices
     Get-EVTXFiles
 }
 
