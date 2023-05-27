@@ -227,7 +227,7 @@ function Get-ConnectedDevices {
     New-Item -Path $DeviceFolder -ItemType Directory -Force | Out-Null
     $ConnectedDevicesOutput = "$DeviceFolder\ConnectedDevices.csv"
 
-    (Get-PnpDevice -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
+    Get-PnpDevice | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
 }
 
 
@@ -256,7 +256,6 @@ function Run-WithoutAdminPrivilege {
     Get-ScheduledTasks
     Get-ScheduledTasksRunInfo
     Get-ConnectedDevices
-    Get-EVTXFiles
 }
 
 #Run all functions that do require admin priviliges
@@ -265,6 +264,7 @@ Function Run-WithAdminPrivilges {
     Get-SecurityEvents
     Get-RemotelyOpenedFiles
     Get-ShadowCopies
+    Get-EVTXFiles
 }
 
 if ($IsAdmin) {
