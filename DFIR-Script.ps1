@@ -123,6 +123,26 @@ function Get-SecurityEvents {
     $ProcessOutput = "$SecurityEvents\SecurityEvents.txt"
     get-eventlog security -After (Get-Date).AddDays(-2) | Format-List * | Out-File -Force -FilePath $ProcessOutput
 }
+
+function Get-EVTXFiles {
+    Write-Host "Collecting Important EVTX Files..."
+    $EventViewer = "$FolderCreation\Event Viewer"
+    mkdir -Force $EventViewer | Out-Null
+    $evtxPath = "C:\Windows\System32\winevt\Logs"
+    $channels = @(
+        "Application",
+        "Security",
+        "System",
+        "Microsoft-Windows-Sysmon%4Operational",
+        "Microsoft-Windows-TaskScheduler%4Operational",
+        "Microsoft-Windows-PowerShell%4Operational"
+    )
+
+    foreach ($channel in $channels) {
+        Copy-Item -Path "$($EventViewer)\$($channel).evtx" -Destination "$($EventViewer)\$($channel).evtx"
+    }
+}
+
 function Get-OfficeConnections {
     Write-Host "Collecting connections made from office applciations..."
     $ConnectionFolder = "$FolderCreation\Connections"
@@ -236,6 +256,7 @@ function Run-WithoutAdminPrivilege {
     Get-ScheduledTasks
     Get-ScheduledTasksRunInfo
     Get-USBConnections
+    Get-EVTXFiles
 }
 
 #Run all functions that do require admin priviliges
