@@ -123,6 +123,26 @@ function Get-SecurityEvents {
     $ProcessOutput = "$SecurityEvents\SecurityEvents.txt"
     get-eventlog security -After (Get-Date).AddDays(-2) | Format-List * | Out-File -Force -FilePath $ProcessOutput
 }
+
+function Get-EVTXFiles {
+    Write-Host "Collecting Important EVTX Files..."
+    $EventViewer = "$FolderCreation\Event Viewer"
+    mkdir -Force $EventViewer | Out-Null
+    $evtxPath = "C:\Windows\System32\winevt\Logs"
+    $channels = @(
+        "Application",
+        "Security",
+        "System",
+        "Microsoft-Windows-Sysmon%4Operational",
+        "Microsoft-Windows-TaskScheduler%4Operational",
+        "Microsoft-Windows-PowerShell%4Operational"
+    )
+
+    foreach ($channel in $channels) {
+        Copy-Item -Path "$($EventViewer)\$($channel).evtx" -Destination "$($EventViewer)\$($channel).evtx"
+    }
+}
+
 function Get-OfficeConnections {
     Write-Host "Collecting connections made from office applciations..."
     $ConnectionFolder = "$FolderCreation\Connections"
@@ -202,12 +222,12 @@ function Get-ScheduledTasksRunInfo {
 }
 
 function Get-ConnectedDevices {
-    Write-Host "Collecting USB Connections..."
+    Write-Host "Collecting Information about Connected Devices..."
     $DeviceFolder = "$FolderCreation\ConnectedDevices"
     New-Item -Path $DeviceFolder -ItemType Directory -Force | Out-Null
     $ConnectedDevicesOutput = "$DeviceFolder\ConnectedDevices.csv"
 
-    (Get-PnpDevice -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
+    Get-PnpDevice | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
 }
 
 
@@ -235,7 +255,7 @@ function Run-WithoutAdminPrivilege {
     Get-RunningServices
     Get-ScheduledTasks
     Get-ScheduledTasksRunInfo
-    Get-USBConnections
+    Get-ConnectedDevices
 }
 
 #Run all functions that do require admin priviliges
@@ -244,6 +264,7 @@ Function Run-WithAdminPrivilges {
     Get-SecurityEvents
     Get-RemotelyOpenedFiles
     Get-ShadowCopies
+    Get-EVTXFiles
 }
 
 if ($IsAdmin) {
