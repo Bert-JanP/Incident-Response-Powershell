@@ -123,7 +123,7 @@ Get-WinEvent -ProviderName msiinstaller | where id -eq 1033 | select timecreated
 ### Running Services
 ```
 Get-Service | Where-Object {$_.Status -eq "Running"} | format-list
-``
+```
 
 # File Analysis
 
