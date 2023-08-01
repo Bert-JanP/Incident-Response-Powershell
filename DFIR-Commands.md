@@ -46,14 +46,14 @@ Get-WinEvent -FilterHashtable @{LogName='Security';ID=4688} -MaxEvents 10 | Form
 
 ### Count By Event Last 2 Days
 ```
-$SecurirtyEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
-$SecurirtyEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending
+$SecurityEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
+$SecurityEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending
 ```
 
 ### Collect Detailed Information All Windows Security Events Last 2 Days
 ```
-$SecurirtyEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
-$SecurirtyEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending
+$SecurityEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
+$SecurityEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending
 ```
 
 # User & Group Information

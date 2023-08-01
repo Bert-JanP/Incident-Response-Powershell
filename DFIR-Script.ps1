@@ -112,8 +112,8 @@ function Get-SecurityEventCount {
     $SecurityEvents = "$FolderCreation\SecurityEvents"
     mkdir -Force $SecurityEvents | Out-Null
     $ProcessOutput = "$SecurityEvents\EventCount.txt"
-    $SecurirtyEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
-    $SecurirtyEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending | Out-File -Force -FilePath $ProcessOutput
+    $SecurityEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
+    $SecurityEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending | Out-File -Force -FilePath $ProcessOutput
 }
 
 function Get-SecurityEvents {
