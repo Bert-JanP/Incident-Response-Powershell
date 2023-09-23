@@ -171,4 +171,19 @@ Get-FileHash -Algorithm MD5 -Path C:\Users\User\AppData\Roaming\Microsoft\Malici
 Get-FileHash -Algorithm SHA256 -Path C:\Users\User\AppData\Roaming\Microsoft\MaliciousFile.exe
 ```
 
-# C
+# Retrieve Logs
+For the best results run the retrieval of the logs as local admin. Otherwise not all logs can be collected.
+
+## Windows Logs
+```
+$eventLogs = 'Application', 'System', 'Security'
+foreach ($logName in $eventLogs) {
+    # Get event log entries for the specified log name
+    $entries = Get-EventLog -LogName $logName
+
+    # Append entries to the logEntries array
+    $logEntries += $entries
+}
+$logEntries
+```
+
