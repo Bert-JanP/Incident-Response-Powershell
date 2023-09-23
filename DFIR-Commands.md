@@ -156,7 +156,7 @@ $encodedstring = "aHR0cHM6Ly90aGlzaXNhbWFsaWNpb3VzZG9tYWluLmNvbS9kb3dubG9hZC9tYW
 [System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($encodedstring))
 ```
 
-# Collect IOC Information
+# Hash Incicators of Compromise
 
 ### SHA1 Hash
 ```
@@ -170,3 +170,5 @@ Get-FileHash -Algorithm MD5 -Path C:\Users\User\AppData\Roaming\Microsoft\Malici
 ```
 Get-FileHash -Algorithm SHA256 -Path C:\Users\User\AppData\Roaming\Microsoft\MaliciousFile.exe
 ```
+
+# C
