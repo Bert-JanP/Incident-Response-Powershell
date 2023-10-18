@@ -1,6 +1,11 @@
 # Powershell Digital Forensics & Incident Response (DFIR)[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Powershell%20DFIR!&url=https://github.com/Bert-JanP/Incident-Response-Powershell)
 
-This page contains two Powershell DFIR solutions. The first is a complete incident response script. The second is a page where all the individual incident response commands are listed. A default version of powershell can be used, without any additional modules.
+This repository contains multiple PowerShell scripts that can help you respond to cyber attacks on Windows Devices.
+
+The following Incident Response scripts are included:
+- [DFIR Script](./DFIR-Script.ps1): Collects all items as listed in section [DFIR Script](#dfir-script).
+- [CollectWindowsEvents](./Scripts/CollectWindowsEvents.ps1): Collects all Windows events and outputs it as CSV.
+- [CollectWindowsSecurityEvents](./Scripts/CollectWindowsSecurityEvents.ps1): Collects all Windows security events and outputs it as CSV.
 
 ## DFIR Script
 The [DFIR script](./DFIR-Script.ps1) collects information from multiple sources and structures the output in the current directory in a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end, so that folder can be remotely collected. This script can also be used within Defender For Endpoint in a Live Response session (see below). The DFIR script collects the following information when running as normal user:
@@ -37,15 +42,15 @@ The [DFIR Commands page](./DFIR-Commands.md) contains invidividual powershell co
 - File Analysis
 - Collect IOC Information
 
-## Usage
+## Windows Usage
 
 The script can be excuted by running the following command.
-```
+```PowerShell
 .\DFIR-Script.ps1
 ```
 
 The script is unsigned, that could result in having to use the -ExecutionPolicy Bypass to run the script.
-```
+```PowerShell
 Powershell.exe -ExecutionPolicy Bypass .\DFIR-Script.ps1
 ```
 
@@ -68,7 +73,9 @@ Execute script:
 - After uploading the script to the library, use the ***run*** command to run the script
 
 To collect the output of the DFIR script perform the following actions:
-- getfile "C:\windows\DFIR-TestDevice-2022-07-06.zip" &	
+```PowerShell
+getfile "C:\windows\DFIR-TestDevice-2022-07-06.zip" &	
+```
 
 ### Docs
 - [Microsoft Documentation Live Response](https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/live-response?view=o365-worldwide)
