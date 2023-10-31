@@ -24,11 +24,15 @@ else {
 }
 
 Write-Host "Creating output directory..."
-$CurrentPath = Get-Location
+$CurrentPath = $env:temp
 $ExecutionTime = $(get-date -f yyyy-MM-dd)
 $FolderCreation = "$CurrentPath\DFIR-$env:computername-$ExecutionTime"
 mkdir -Force $FolderCreation | Out-Null
 Write-Host "Output directory created: $FolderCreation..."
+
+$currentUsername = query user | ?{$_ -notmatch "\sUSERNAME" -and $_ -match "^(\>|\s)([^\s]+)\s+console\s"} | %{$matches[2]}
+$currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | %{$_.PSChildName}
+Write-Host "Current user: $currentUsername $currentUserSid"
 
 function Get-IPInfo {
     Write-Host "Collecting local ip info..."
@@ -103,7 +107,7 @@ function Get-ActiveProcesses {
         }   
     }
 
-    ($processes_list | Select-Object Proc_Path, Proc_Hash�-Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
+    ($processes_list | Select-Object Proc_Path, Proc_HashÂ -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
     ($processes_list | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput
 }
 
@@ -138,23 +142,47 @@ function Get-EVTXFiles {
         "Microsoft-Windows-PowerShell%4Operational"
     )
 
-    foreach ($channel in $channels) {
-        Copy-Item -Path "$($EventViewer)\$($channel).evtx" -Destination "$($EventViewer)\$($channel).evtx"
+    Get-ChildItem "$evtxPath\*.evtx" | ?{$_.BaseName -in $channels} | %{
+        Copy-Item  -Path $_.FullName -Destination "$($EventViewer)\$($_.Name)"
     }
 }
 
 function Get-OfficeConnections {
-    Write-Host "Collecting connections made from office applciations..."
+    param(
+        [Parameter(Mandatory=$false)][String]$UserSid
+    )
+
+    Write-Host "Collecting connections made from office applications..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $OfficeConnection = "$ConnectionFolder\ConnectionsMadeByOffice.txt"
-    Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+
+    #ML
+    if($UserSid) {
+        Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache*" -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection
+    }
+    else {
+        Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+    }
+    #
 }
 
 function Get-NetworkShares {
+    param(
+        [Parameter(Mandatory=$false)][String]$UserSid
+    )
+
     Write-Host "Collecting Active Network Shares..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\NetworkShares.txt"
-    Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
+
+    #ML
+    if($UserSid) {
+        Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
+    }
+    else {
+        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
+    }
+    #
 }
 
 function Get-SMBShares {
@@ -238,14 +266,18 @@ function Zip-Results {
 
 #Run all functions that do not require admin priviliges
 function Run-WithoutAdminPrivilege {
+    param(
+        [Parameter(Mandatory=$false)][String]$UserSid
+    )
+
     Get-IPInfo
     Get-OpenConnections
     Get-AutoRunInfo
     Get-ActiveUsers
     Get-LocalUsers
     Get-ActiveProcesses
-    Get-OfficeConnections
-    Get-NetworkShares
+    Get-OfficeConnections -UserSid $UserSid
+    Get-NetworkShares -UserSid $UserSid
     Get-SMBShares
     Get-RDPSessions
     Get-PowershellHistory
@@ -268,11 +300,11 @@ Function Run-WithAdminPrivilges {
 }
 
 if ($IsAdmin) {
-    Run-WithoutAdminPrivilege
+    Run-WithoutAdminPrivilege -UserSid $currentUserSid
     Run-WithAdminPrivilges
 }
 else {
-    Run-WithoutAdminPrivilege
+    Run-WithoutAdminPrivilege -UserSid $currentUserSid
 }
 
 Zip-Results
