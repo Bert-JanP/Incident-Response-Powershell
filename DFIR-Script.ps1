@@ -107,7 +107,7 @@ function Get-ActiveProcesses {
         }   
     }
 
-    ($processes_list | Select-Object Proc_Path, Proc_HashÂ -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
+    ($processes_list | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
     ($processes_list | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput
 }
 
@@ -156,14 +156,12 @@ function Get-OfficeConnections {
     $ConnectionFolder = "$FolderCreation\Connections"
     $OfficeConnection = "$ConnectionFolder\ConnectionsMadeByOffice.txt"
 
-    #ML
     if($UserSid) {
         Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache*" -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection
     }
     else {
         Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
     }
-    #
 }
 
 function Get-NetworkShares {
@@ -175,14 +173,12 @@ function Get-NetworkShares {
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\NetworkShares.txt"
 
-    #ML
     if($UserSid) {
         Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
     }
     else {
         Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
     }
-    #
 }
 
 function Get-SMBShares {
