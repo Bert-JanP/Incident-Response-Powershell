@@ -61,6 +61,8 @@ Powershell.exe -ExecutionPolicy Bypass .\DFIR-Script.ps1
 ## DFIR Script | Defender For Endpoit Live Response Integration
 It is possible to use the DFIR Script in combination with the Defender For Endpoint Live Repsonse. Make sure that Live Response is setup  (See DOCS). Since my script is usigned a setting change must be made to able to run the script.
 
+There is a blog article available that explains more about how to leverage Custom Script in Live Response: [Incident Response Part 3: Leveraging Live Response](https://kqlquery.com/posts/leveraging-live-response/)
+
 To run unsigned scripts live Response:
 - Security.microsoft.com
 - Settings
