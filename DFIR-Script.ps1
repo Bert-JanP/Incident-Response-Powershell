@@ -254,6 +254,60 @@ function Get-ConnectedDevices {
     Get-PnpDevice | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
 }
 
+function Get-ChromiumFiles {
+    param(
+        [Parameter(Mandatory=$true)][String]$Username
+    )
+
+    Write-Host "Collecting raw Chromium history and profile files..."
+    $HistoryFolder = "$FolderCreation\Browsers\Chromium"
+    New-Item -Path $HistoryFolder -ItemType Directory -Force | Out-Null
+
+    $filesToCopy = @(
+        'Preferences',
+        'History'
+    )
+
+    Get-ChildItem "C:\Users\$Username\AppData\Local\*\*\User Data\*\" | Where-Object { `
+        (Test-Path "$_\History") -and `
+        [char[]](Get-Content "$($_.FullName)\History" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
+    } | %{ 
+        $srcpath = $_.FullName
+        $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Local",$HistoryFolder -replace "User Data\\",""
+        New-Item -Path $destpath -ItemType Directory -Force | Out-Null
+
+        $filesToCopy | %{
+            $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+        }
+    }
+}
+
+function Get-FirefoxFiles {
+    param(
+        [Parameter(Mandatory=$true)][String]$Username
+    )
+
+    Write-Host "Collecting raw Firefox history and profile files..."
+    $HistoryFolder = "$FolderCreation\Browsers\Firefox"
+    New-Item -Path $HistoryFolder -ItemType Directory -Force | Out-Null
+
+    $filesToCopy = @(
+        'places.sqlite',
+        'permissions.sqlite',
+        'content-prefs.sqlite',
+        'extensions'
+    )
+
+    Get-ChildItem "C:\Users\$Username\AppData\Roaming\Mozilla\Firefox\Profiles\" | Where-Object { `
+        (Test-Path "$($_.FullName)\places.sqlite") -and `
+        [char[]](Get-Content "$($_.FullName)\places.sqlite" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
+    } | %{
+        $srcpath = $_.FullName
+        $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles",$HistoryFolder
+        New-Item -Path $destpath -ItemType Directory -Force | Out-Null
+        $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+    }
+}
 
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
@@ -263,7 +317,8 @@ function Zip-Results {
 #Run all functions that do not require admin priviliges
 function Run-WithoutAdminPrivilege {
     param(
-        [Parameter(Mandatory=$false)][String]$UserSid
+        [Parameter(Mandatory=$false)][String]$UserSid,
+        [Parameter(Mandatory=$false)][String]$Username
     )
 
     Get-IPInfo
@@ -284,6 +339,10 @@ function Run-WithoutAdminPrivilege {
     Get-ScheduledTasks
     Get-ScheduledTasksRunInfo
     Get-ConnectedDevices
+    if($Username) {
+        Get-ChromiumFiles -Username $Username
+        Get-FirefoxFiles -Username $Username
+    }
 }
 
 #Run all functions that do require admin priviliges
@@ -295,12 +354,9 @@ Function Run-WithAdminPrivilges {
     Get-EVTXFiles
 }
 
+Run-WithoutAdminPrivilege -UserSid $currentUserSid -Username $currentUsername
 if ($IsAdmin) {
-    Run-WithoutAdminPrivilege -UserSid $currentUserSid
     Run-WithAdminPrivilges
-}
-else {
-    Run-WithoutAdminPrivilege -UserSid $currentUserSid
 }
 
 Zip-Results
