@@ -24,11 +24,15 @@ else {
 }
 
 Write-Host "Creating output directory..."
-$CurrentPath = Get-Location
+$CurrentPath = $env:temp
 $ExecutionTime = $(get-date -f yyyy-MM-dd)
 $FolderCreation = "$CurrentPath\DFIR-$env:computername-$ExecutionTime"
 mkdir -Force $FolderCreation | Out-Null
 Write-Host "Output directory created: $FolderCreation..."
+
+$currentUsername = query user | ?{$_ -notmatch "\sUSERNAME" -and $_ -match "^(\>|\s)([^\s]+)\s+console\s"} | %{$matches[2]}
+$currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | %{$_.PSChildName}
+Write-Host "Current user: $currentUsername $currentUserSid"
 
 function Get-IPInfo {
     Write-Host "Collecting local ip info..."
@@ -103,7 +107,7 @@ function Get-ActiveProcesses {
         }   
     }
 
-    ($processes_list | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
+    ($processes_list | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
     ($processes_list | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput
 }
 
@@ -138,23 +142,43 @@ function Get-EVTXFiles {
         "Microsoft-Windows-PowerShell%4Operational"
     )
 
-    foreach ($channel in $channels) {
-        Copy-Item -Path "$($EventViewer)\$($channel).evtx" -Destination "$($EventViewer)\$($channel).evtx"
+    Get-ChildItem "$evtxPath\*.evtx" | ?{$_.BaseName -in $channels} | %{
+        Copy-Item  -Path $_.FullName -Destination "$($EventViewer)\$($_.Name)"
     }
 }
 
 function Get-OfficeConnections {
-    Write-Host "Collecting connections made from office applciations..."
+    param(
+        [Parameter(Mandatory=$false)][String]$UserSid
+    )
+
+    Write-Host "Collecting connections made from office applications..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $OfficeConnection = "$ConnectionFolder\ConnectionsMadeByOffice.txt"
-    Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+
+    if($UserSid) {
+        Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache*" -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection
+    }
+    else {
+        Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+    }
 }
 
 function Get-NetworkShares {
+    param(
+        [Parameter(Mandatory=$false)][String]$UserSid
+    )
+
     Write-Host "Collecting Active Network Shares..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\NetworkShares.txt"
-    Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
+
+    if($UserSid) {
+        Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
+    }
+    else {
+        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
+    }
 }
 
 function Get-SMBShares {
@@ -230,6 +254,60 @@ function Get-ConnectedDevices {
     Get-PnpDevice | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
 }
 
+function Get-ChromiumFiles {
+    param(
+        [Parameter(Mandatory=$true)][String]$Username
+    )
+
+    Write-Host "Collecting raw Chromium history and profile files..."
+    $HistoryFolder = "$FolderCreation\Browsers\Chromium"
+    New-Item -Path $HistoryFolder -ItemType Directory -Force | Out-Null
+
+    $filesToCopy = @(
+        'Preferences',
+        'History'
+    )
+
+    Get-ChildItem "C:\Users\$Username\AppData\Local\*\*\User Data\*\" | Where-Object { `
+        (Test-Path "$_\History") -and `
+        [char[]](Get-Content "$($_.FullName)\History" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
+    } | %{ 
+        $srcpath = $_.FullName
+        $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Local",$HistoryFolder -replace "User Data\\",""
+        New-Item -Path $destpath -ItemType Directory -Force | Out-Null
+
+        $filesToCopy | %{
+            $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+        }
+    }
+}
+
+function Get-FirefoxFiles {
+    param(
+        [Parameter(Mandatory=$true)][String]$Username
+    )
+
+    Write-Host "Collecting raw Firefox history and profile files..."
+    $HistoryFolder = "$FolderCreation\Browsers\Firefox"
+    New-Item -Path $HistoryFolder -ItemType Directory -Force | Out-Null
+
+    $filesToCopy = @(
+        'places.sqlite',
+        'permissions.sqlite',
+        'content-prefs.sqlite',
+        'extensions'
+    )
+
+    Get-ChildItem "C:\Users\$Username\AppData\Roaming\Mozilla\Firefox\Profiles\" | Where-Object { `
+        (Test-Path "$($_.FullName)\places.sqlite") -and `
+        [char[]](Get-Content "$($_.FullName)\places.sqlite" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
+    } | %{
+        $srcpath = $_.FullName
+        $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles",$HistoryFolder
+        New-Item -Path $destpath -ItemType Directory -Force | Out-Null
+        $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+    }
+}
 
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
@@ -238,14 +316,19 @@ function Zip-Results {
 
 #Run all functions that do not require admin priviliges
 function Run-WithoutAdminPrivilege {
+    param(
+        [Parameter(Mandatory=$false)][String]$UserSid,
+        [Parameter(Mandatory=$false)][String]$Username
+    )
+
     Get-IPInfo
     Get-OpenConnections
     Get-AutoRunInfo
     Get-ActiveUsers
     Get-LocalUsers
     Get-ActiveProcesses
-    Get-OfficeConnections
-    Get-NetworkShares
+    Get-OfficeConnections -UserSid $UserSid
+    Get-NetworkShares -UserSid $UserSid
     Get-SMBShares
     Get-RDPSessions
     Get-PowershellHistory
@@ -256,6 +339,10 @@ function Run-WithoutAdminPrivilege {
     Get-ScheduledTasks
     Get-ScheduledTasksRunInfo
     Get-ConnectedDevices
+    if($Username) {
+        Get-ChromiumFiles -Username $Username
+        Get-FirefoxFiles -Username $Username
+    }
 }
 
 #Run all functions that do require admin priviliges
@@ -267,12 +354,9 @@ Function Run-WithAdminPrivilges {
     Get-EVTXFiles
 }
 
+Run-WithoutAdminPrivilege -UserSid $currentUserSid -Username $currentUsername
 if ($IsAdmin) {
-    Run-WithoutAdminPrivilege
     Run-WithAdminPrivilges
-}
-else {
-    Run-WithoutAdminPrivilege
 }
 
 Zip-Results
