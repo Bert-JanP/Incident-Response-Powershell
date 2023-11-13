@@ -31,7 +31,7 @@ mkdir -Force $FolderCreation | Out-Null
 Write-Host "Output directory created: $FolderCreation..."
 
 $currentUsername = (Get-WmiObject Win32_Process -f 'Name="explorer.exe"').GetOwner().User
-$currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | %{$_.PSChildName}
+$currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | ForEach-Object{$_.PSChildName}
 Write-Host "Current user: $currentUsername $currentUserSid"
 
 function Get-IPInfo {
@@ -142,7 +142,7 @@ function Get-EVTXFiles {
         "Microsoft-Windows-PowerShell%4Operational"
     )
 
-    Get-ChildItem "$evtxPath\*.evtx" | Where-Object{$_.BaseName -in $channels} | %{
+    Get-ChildItem "$evtxPath\*.evtx" | Where-Object{$_.BaseName -in $channels} | ForEach-Object{
         Copy-Item  -Path $_.FullName -Destination "$($EventViewer)\$($_.Name)"
     }
 }
@@ -276,8 +276,8 @@ function Get-ChromiumFiles {
         $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Local",$HistoryFolder -replace "User Data\\",""
         New-Item -Path $destpath -ItemType Directory -Force | Out-Null
 
-        $filesToCopy | %{
-            $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+        $filesToCopy | ForEach-Object{
+            $filesToCopy | Where-Object{ Test-Path "$srcpath\$_" } | ForEach-Object{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
         }
     }
 }
@@ -306,7 +306,7 @@ function Get-FirefoxFiles {
             $srcpath = $_.FullName
             $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles",$HistoryFolder
             New-Item -Path $destpath -ItemType Directory -Force | Out-Null
-            $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+            $filesToCopy | Where-Object{ Test-Path "$srcpath\$_" } | ForEach-Object{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
         }
     }
 }
