@@ -24,7 +24,7 @@ else {
 }
 
 Write-Host "Creating output directory..."
-$CurrentPath = $env:temp
+$CurrentPath = $pwd
 $ExecutionTime = $(get-date -f yyyy-MM-dd)
 $FolderCreation = "$CurrentPath\DFIR-$env:computername-$ExecutionTime"
 mkdir -Force $FolderCreation | Out-Null
