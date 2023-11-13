@@ -194,3 +194,22 @@ foreach ($logName in $eventLogs) {
 $logEntries
 ```
 
+# Defender Exclusions
+List the defender exclusions that are defined for your (local) machine.
+
+## IP
+```PowerShell
+Get-MpPreference | Select-Object -ExpandProperty ExclusionIpAddress
+```
+## FolderPath
+```PowerShell
+Get-MpPreference | Select-Object -ExpandProperty ExclusionPath
+```
+## Process
+```PowerShell
+Get-MpPreference | Select-Object -ExpandProperty ExclusionProcess
+```
+## Extension
+```PowerShell
+Get-MpPreference | Select-Object -ExpandProperty ExclusionExtension
+```

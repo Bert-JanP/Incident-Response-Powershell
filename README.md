@@ -8,6 +8,9 @@ The following Incident Response scripts are included:
 - [CollectWindowsSecurityEvents](./Scripts/CollectWindowsSecurityEvents.ps1): Collects all Windows security events and outputs it as CSV.
 - [CollectPnPDevices](./Scripts/CollectPnPDevices.ps1): Collects all Plug and Play devices, such as USB, Network and Storage.
 - [DumpLocalAdmins](./Scripts/DumpLocalAdmins.ps1): Returns all local admins of a device.
+- [LastLogons](./Scripts/LastLogons.ps1) - List the last N successful logins of a device.
+- [ListInstalledSecurityProducts](./Scripts/ListInstalledSecurityProducts.ps1) - List the installed security products and their status.
+- [ListDefenderExclusions](./Scripts/ListDefenderExclusions.ps1) - List the FolderPath, FileExtension, Process and IP exclusions that are defined.
 
 ## DFIR Script
 The [DFIR script](./DFIR-Script.ps1) collects information from multiple sources and structures the output in the current directory in a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end, so that folder can be remotely collected. This script can also be used within Defender For Endpoint in a Live Response session (see below). The DFIR script collects the following information when running as normal user:
@@ -58,6 +61,8 @@ Powershell.exe -ExecutionPolicy Bypass .\DFIR-Script.ps1
 
 ## DFIR Script | Defender For Endpoit Live Response Integration
 It is possible to use the DFIR Script in combination with the Defender For Endpoint Live Repsonse. Make sure that Live Response is setup  (See DOCS). Since my script is usigned a setting change must be made to able to run the script.
+
+There is a blog article available that explains more about how to leverage Custom Script in Live Response: [Incident Response Part 3: Leveraging Live Response](https://kqlquery.com/posts/leveraging-live-response/)
 
 To run unsigned scripts live Response:
 - Security.microsoft.com
