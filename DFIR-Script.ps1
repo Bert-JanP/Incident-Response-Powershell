@@ -30,7 +30,7 @@ $FolderCreation = "$CurrentPath\DFIR-$env:computername-$ExecutionTime"
 mkdir -Force $FolderCreation | Out-Null
 Write-Host "Output directory created: $FolderCreation..."
 
-$currentUsername = query user | ?{$_ -notmatch "\sUSERNAME" -and $_ -match "^(\>|\s)([^\s]+)\s+console\s"} | %{$matches[2]}
+$currentUsername = (Get-WmiObject Win32_Process -f 'Name="explorer.exe"').GetOwner().User
 $currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | %{$_.PSChildName}
 Write-Host "Current user: $currentUsername $currentUserSid"
 
@@ -94,7 +94,7 @@ function Get-ActiveProcesses {
     foreach ($process in (Get-WmiObject Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId))
     {
         $process_obj = New-Object PSCustomObject
-        if ($process.ExecutablePath -ne $null)
+        if ($null -ne $process.ExecutablePath)
         {
             $hash = (Get-FileHash -Algorithm SHA256 -Path $process.ExecutablePath).Hash 
             $process_obj | Add-Member -NotePropertyName Proc_Hash -NotePropertyValue $hash
@@ -142,7 +142,7 @@ function Get-EVTXFiles {
         "Microsoft-Windows-PowerShell%4Operational"
     )
 
-    Get-ChildItem "$evtxPath\*.evtx" | ?{$_.BaseName -in $channels} | %{
+    Get-ChildItem "$evtxPath\*.evtx" | Where-Object{$_.BaseName -in $channels} | %{
         Copy-Item  -Path $_.FullName -Destination "$($EventViewer)\$($_.Name)"
     }
 }
@@ -271,7 +271,7 @@ function Get-ChromiumFiles {
     Get-ChildItem "C:\Users\$Username\AppData\Local\*\*\User Data\*\" | Where-Object { `
         (Test-Path "$_\History") -and `
         [char[]](Get-Content "$($_.FullName)\History" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
-    } | %{ 
+    } | Where-Object { 
         $srcpath = $_.FullName
         $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Local",$HistoryFolder -replace "User Data\\",""
         New-Item -Path $destpath -ItemType Directory -Force | Out-Null
@@ -287,25 +287,27 @@ function Get-FirefoxFiles {
         [Parameter(Mandatory=$true)][String]$Username
     )
 
-    Write-Host "Collecting raw Firefox history and profile files..."
-    $HistoryFolder = "$FolderCreation\Browsers\Firefox"
-    New-Item -Path $HistoryFolder -ItemType Directory -Force | Out-Null
+    if(Test-Path "C:\Users\$Username\AppData\Roaming\Mozilla\Firefox\Profiles\") {
+        Write-Host "Collecting raw Firefox history and profile files..."
+        $HistoryFolder = "$FolderCreation\Browsers\Firefox"
+        New-Item -Path $HistoryFolder -ItemType Directory -Force | Out-Null
 
-    $filesToCopy = @(
-        'places.sqlite',
-        'permissions.sqlite',
-        'content-prefs.sqlite',
-        'extensions'
-    )
+        $filesToCopy = @(
+            'places.sqlite',
+            'permissions.sqlite',
+            'content-prefs.sqlite',
+            'extensions'
+        )
 
-    Get-ChildItem "C:\Users\$Username\AppData\Roaming\Mozilla\Firefox\Profiles\" | Where-Object { `
-        (Test-Path "$($_.FullName)\places.sqlite") -and `
-        [char[]](Get-Content "$($_.FullName)\places.sqlite" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
-    } | %{
-        $srcpath = $_.FullName
-        $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles",$HistoryFolder
-        New-Item -Path $destpath -ItemType Directory -Force | Out-Null
-        $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+        Get-ChildItem "C:\Users\$Username\AppData\Roaming\Mozilla\Firefox\Profiles\" | Where-Object { `
+            (Test-Path "$($_.FullName)\places.sqlite") -and `
+            [char[]](Get-Content "$($_.FullName)\places.sqlite" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
+        } | ForEach-Object {
+            $srcpath = $_.FullName
+            $destpath = $_.FullName -replace "^C:\\Users\\$Username\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles",$HistoryFolder
+            New-Item -Path $destpath -ItemType Directory -Force | Out-Null
+            $filesToCopy | ?{ Test-Path "$srcpath\$_" } | %{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+        }
     }
 }
 
