@@ -1,3 +1,32 @@
+<#
+.SYNOPSIS
+    Brief description of the script or function's purpose.
+
+.DESCRIPTION
+    Detailed description of what the script or function does.
+
+.PARAMETER time
+    Description of each parameter used in the script or function.
+
+    You can provide additional information about the parameter here.
+
+.EXAMPLE
+    Run Script without any parameters
+    .\DFIR-Script.ps1
+.EXAMPLE
+    Define custom search window, this is done in days. Example below collects the Security Events from the last 10 days.
+    .\DFIR-Script.ps1 -$sw 10
+
+.NOTES
+    Any additional notes or information about the script or function.
+#>
+
+param(
+        [Parameter(Mandatory=$false)][int]$sw = 2 # Defines the custom search window, this is done in days.
+    )
+
+
+
 $ASCIIBanner = @"
   _____                                           _              _   _     _____    ______   _____   _____  
  |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
@@ -134,22 +163,28 @@ function Get-ActiveProcesses {
 }
 
 function Get-SecurityEventCount {
-    Write-Host "Collecting stats Security Events last 48 hours..."
+    param(
+        [Parameter(Mandatory=$true)][String]$sw
+    )
+    Write-Host "Collecting stats Security Events last $sw days..."
     $SecurityEvents = "$FolderCreation\SecurityEvents"
     mkdir -Force $SecurityEvents | Out-Null
     $ProcessOutput = "$SecurityEvents\EventCount.txt"
-    $SecurityEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
+    $SecurityEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-$sw)
     $SecurityEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending | Out-File -Force -FilePath $ProcessOutput
 }
 
 function Get-SecurityEvents {
-    Write-Host "Collecting Security Events last 48 hours..."
+    param(
+        [Parameter(Mandatory=$true)][String]$sw
+    )
+    Write-Host "Collecting Security Events last $sw days..."
     $SecurityEvents = "$FolderCreation\SecurityEvents"
     mkdir -Force $SecurityEvents | Out-Null
     $ProcessOutput = "$SecurityEvents\SecurityEvents.txt"
-    get-eventlog security -After (Get-Date).AddDays(-2) | Format-List * | Out-File -Force -FilePath $ProcessOutput
+    get-eventlog security -After (Get-Date).AddDays(-$sw) | Format-List * | Out-File -Force -FilePath $ProcessOutput
 	$CSVExportLocation = "$CSVOutputFolder\SecurityEvents.csv"
-	get-eventlog security -After (Get-Date).AddDays(-2) | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+	get-eventlog security -After (Get-Date).AddDays(-$sw) | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-EventViewerFiles {
@@ -399,8 +434,8 @@ function Run-WithoutAdminPrivilege {
 
 #Run all functions that do require admin priviliges
 function Run-WithAdminPrivilges {
-    Get-SecurityEventCount
-    Get-SecurityEvents
+    Get-SecurityEventCount -time $sw
+    Get-SecurityEvents -time $sw
     Get-RemotelyOpenedFiles
     Get-ShadowCopies
     Get-EventViewerFiles
