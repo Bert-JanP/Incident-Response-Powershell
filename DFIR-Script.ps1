@@ -171,7 +171,6 @@ function Get-EventViewerFiles {
     }
 }
 
-# Fix CSV Export
 function Get-OfficeConnections {
     param(
         [Parameter(Mandatory=$false)][String]$UserSid
@@ -184,12 +183,12 @@ function Get-OfficeConnections {
 	
 
     if($UserSid) {
-        Get-ChildItem -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache*" -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection
-		Get-ChildItem -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache*" -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+        Get-ChildItem -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache" -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection
+		Get-ChildItem -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache" -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
     else {
-        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
-		Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+		Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
 }
 
@@ -201,12 +200,15 @@ function Get-NetworkShares {
     Write-Host "Collecting Active Network Shares..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\NetworkShares.txt"
+	$CSVExportLocation = "$CSVOutputFolder\NetworkShares.csv"
 
     if($UserSid) {
         Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
+		Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
     else {
-        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
+        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
+		Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
 }
 
@@ -223,14 +225,18 @@ function Get-RDPSessions {
     Write-Host "Collecting RDS Sessions..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\RDPSessions.txt"
+	$CSVExportLocation = "$CSVOutputFolder\RDPSessions.csv"
     qwinsta /server:localhost | Out-File -Force -FilePath $ProcessOutput
+	(qwinsta /server:localhost) -split "\n" -replace '\s\s+', ',' | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-RemotelyOpenedFiles {
     Write-Host "Collecting Remotly Opened Files..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\RemotelyOpenedFiles.txt"
+	$CSVExportLocation = "$CSVOutputFolder\RemotelyOpenedFiles.csv"
     openfiles | Out-File -Force -FilePath $ProcessOutput
+	(openfiles) -split "\n" -replace '\s\s+', ',' | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-DNSCache {
@@ -275,7 +281,7 @@ function Get-ScheduledTasks {
     mkdir -Force $ScheduledTaskFolder| Out-Null
     $ProcessOutput = "$ScheduledTaskFolder\ScheduledTasksList.txt"
     Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Format-List | Out-File -Force -FilePath $ProcessOutput
-	$CSVExportLocation = "$CSVOutputFolder\RunningServices.csv"
+	$CSVExportLocation = "$CSVOutputFolder\ScheduledTasks.csv"
 	Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
@@ -283,7 +289,9 @@ function Get-ScheduledTasksRunInfo {
     Write-Host "Collecting Scheduled Tasks Run Info..."
     $ScheduledTaskFolder = "$FolderCreation\ScheduledTask"
     $ProcessOutput = "$ScheduledTaskFolder\ScheduledTasksListRunInfo.txt"
+	$CSVExportLocation = "$CSVOutputFolder\ScheduledTasksRunInfo.csv"
     Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | Out-File -Force -FilePath $ProcessOutput
+	Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ConnectedDevices {
@@ -292,7 +300,7 @@ function Get-ConnectedDevices {
     New-Item -Path $DeviceFolder -ItemType Directory -Force | Out-Null
     $ConnectedDevicesOutput = "$DeviceFolder\ConnectedDevices.csv"
     Get-PnpDevice | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
-	$CSVExportLocation = "$CSVOutputFolder\RunningServices.csv"
+	$CSVExportLocation = "$CSVOutputFolder\ConnectedDevices.csv"
 	Get-PnpDevice | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
@@ -353,21 +361,6 @@ function Get-FirefoxFiles {
     }
 }
 
-function Add-DataSource-Fields-To-CSV {
-	# Get all .csv files in the folder
-	$csvFiles = Get-ChildItem -Path $CSVOutputFolder -Filter *.csv
-
-	# Loop through each .csv file and add the DataSource column
-	foreach ($file in $csvFiles) {
-		# Read the CSV file
-		$csvData = Import-Csv -Path $file.FullName
-		$dataSourceValue = $file.BaseName
-		$csvData | ForEach-Object { $_ | Add-Member -MemberType NoteProperty -Name "DataSource" -Value $dataSourceValue -PassThru } |
-			Export-Csv -Path $file.FullName -NoTypeInformation
-	}
-
-}
-
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
     Compress-Archive -Force -LiteralPath $FolderCreation -DestinationPath "$FolderCreation.zip"
@@ -413,13 +406,9 @@ function Run-WithAdminPrivilges {
     Get-EventViewerFiles
 }
 
-function SIEM-Data-Wrangling {
-	Add-DataSource-Fields-To-CSV
-}
-
 Run-WithoutAdminPrivilege -UserSid $currentUserSid -Username $currentUsername
 if ($IsAdmin) {
     Run-WithAdminPrivilges
 }
-#SIEM-Data-Wrangling
+
 Zip-Results
