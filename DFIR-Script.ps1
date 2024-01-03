@@ -1,9 +1,8 @@
 <#
-.SYNOPSIS
-    Brief description of the script or function's purpose.
-
 .DESCRIPTION
-    Detailed description of what the script or function does.
+    The DFIR Script collects information from multiple sources and structures the output in the current directory in a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end, so that folder can be remotely collected. This script can also be used within Defender For Endpoint in a Live Response session (see https://https://github.com/Bert-JanP/Incident-Response-Powershell).
+	
+	The script also provides the results as CSV to be inported in SIEM or Data Analysis tooling, the folder in which those files are located is named 'CSV Results (SIEM Data)'.
 
 .PARAMETER time
     Description of each parameter used in the script or function.
@@ -15,7 +14,7 @@
     .\DFIR-Script.ps1
 .EXAMPLE
     Define custom search window, this is done in days. Example below collects the Security Events from the last 10 days.
-    .\DFIR-Script.ps1 -$sw 10
+    .\DFIR-Script.ps1 -sw 10
 
 .NOTES
     Any additional notes or information about the script or function.
@@ -401,8 +400,27 @@ function Get-MPLogs {
 	$MPLogFolder = "$FolderCreation\MPLogs"
 	New-Item -Path $MPLogFolder -ItemType Directory -Force | Out-Null
 	$MPLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support"
-	write-host $MPLogLocation
 	Copy-Item -Path $MPLogLocation -Destination $MPLogFolder -Recurse
+}
+
+function Get-DefenderExclusions {
+	Write-Host "Collecting Defender Exclusions..."
+	$DefenderExclusionFolder = "$FolderCreation\DefenderExclusions"
+	New-Item -Path $DefenderExclusionFolder -ItemType Directory -Force | Out-Null
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionPath | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionPath.txt"
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionExtension | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionExtension.txt"
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionIpAddress | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionIpAddress.txt"
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionProcess | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionProcess.txt"
+	
+	$CSVExportLocation = "$CSVOutputFolder\DefenderExclusions.csv"
+	$ExclusionPaths = (Get-MpPreference | Select-Object -ExpandProperty ExclusionPath) -join "`n"
+	$ExclusionExtensions = (Get-MpPreference | Select-Object -ExpandProperty ExclusionExtension) -join "`n"
+	$ExclusionIPAddresses = (Get-MpPreference | Select-Object -ExpandProperty ExclusionIpAddress) -join "`n"
+	$ExclusionProcesses = (Get-MpPreference | Select-Object -ExpandProperty ExclusionProcess) -join "`n"
+
+	# Combine all results into a single array
+	$combinedData = $ExclusionPaths, $ExclusionExtensions, $ExclusionIPAddresses, $ExclusionProcesses
+	$combinedData -split "\n" -replace '\s\s+', ',' | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Zip-Results {
@@ -449,6 +467,7 @@ function Run-WithAdminPrivilges {
     Get-ShadowCopies
     Get-EventViewerFiles
 	Get-MPLogs
+	Get-DefenderExclusions
 }
 
 Run-WithoutAdminPrivilege -UserSid $currentUserSid -Username $currentUsername

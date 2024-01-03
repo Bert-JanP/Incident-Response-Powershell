@@ -33,6 +33,8 @@ The [DFIR script](./DFIR-Script.ps1) collects information from multiple sources 
 - Running Services
 - Scheduled Tasks
 - Browser history and profile files
+- MPLogs
+- Defender Exclusions
 
 For the best experience run the script as admin, then the following items will also be collected:
 - Windows Security Events
