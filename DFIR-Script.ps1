@@ -396,6 +396,15 @@ function Get-FirefoxFiles {
     }
 }
 
+function Get-MPLogs {
+	Write-Host "Collecting MPLogs..."
+	$MPLogFolder = "$FolderCreation\MPLogs"
+	New-Item -Path $MPLogFolder -ItemType Directory -Force | Out-Null
+	$MPLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support"
+	write-host $MPLogLocation
+	Copy-Item -Path $MPLogLocation -Destination $MPLogFolder -Recurse
+}
+
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
     Compress-Archive -Force -LiteralPath $FolderCreation -DestinationPath "$FolderCreation.zip"
@@ -439,6 +448,7 @@ function Run-WithAdminPrivilges {
     Get-RemotelyOpenedFiles
     Get-ShadowCopies
     Get-EventViewerFiles
+	Get-MPLogs
 }
 
 Run-WithoutAdminPrivilege -UserSid $currentUserSid -Username $currentUsername
