@@ -12,7 +12,7 @@ The following Incident Response scripts are included:
 - [ListInstalledSecurityProducts](./Scripts/ListInstalledSecurityProducts.ps1) - List the installed security products and their status.
 - [ListDefenderExclusions](./Scripts/ListDefenderExclusions.ps1) - List the FolderPath, FileExtension, Process and IP exclusions that are defined.
 
-## DFIR Script
+## DFIR Script - Extracted Artefacts
 The [DFIR script](./DFIR-Script.ps1) collects information from multiple sources and structures the output in the current directory in a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end, so that folder can be remotely collected. This script can also be used within Defender For Endpoint in a Live Response session (see below). The DFIR script collects the following information when running as normal user:
 - Local IP Info
 - Open Connections
@@ -38,6 +38,38 @@ For the best experience run the script as admin, then the following items will a
 - Shadow Copies
 - MPLogs
 - Defender Exclusions
+
+## SIEM Import Functionality
+The forensic artefacts are exported as CSV files, which allows responders to ingest them into their tooling. Some example tools in which you can ingest the data are Sentinel, Splunk, Elastic or Azure Data Explorer. This will allow you to perform filtering, aggregation and visualisation with your preferred query language. 
+
+The folder *CSV Results (SIEM Import Data)* includes all the CSV files containing the artefacts, the folder listing is shown below.
+
+```PowerShell
+Name
+----
+ActiveUsers.csv
+AutoRun.csv
+ConnectedDevices.csv
+DefenderExclusions.csv
+DNSCache.csv
+Drivers.csv
+InstalledSoftware.csv
+IPConfiguration.csv
+LocalUsers.csv
+NetworkShares.csv
+OfficeConnections.csv
+OpenTCPConnections.csv
+PowerShellHistory.csv
+Processes.csv
+RDPSessions.csv
+RemotelyOpenedFiles.csv
+RunningServices.csv
+ScheduledTasks.csv
+ScheduledTasksRunInfo.csv
+SecurityEvents.csv
+ShadowCopy.csv
+SMBShares.csv
+```
 
 ## DFIR Commands
 The [DFIR Commands page](./DFIR-Commands.md) contains invidividual powershell commands that can be used during your incident response process. The follwing catagories are defined:
