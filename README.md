@@ -80,12 +80,8 @@ Execute script:
 - Go to the device page
 - Initiate Live Response session
 - Upload File to library to upload script
-- After uploading the script to the library, use the ***run*** command to run the script
-
-To collect the output of the DFIR script perform the following actions:
-```PowerShell
-getfile "C:\windows\DFIR-TestDevice-2022-07-06.zip" &	
-```
+- After uploading the script to the library execute: ```run DFIR-script.ps1``` to start the script.
+- Execute ```getfile DFIR-DeviceName-yyyy-mm-dd``` to download the retrieved artifacts to your local machine for analysis.
 
 ### Docs
 - [Microsoft Documentation Live Response](https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/live-response?view=o365-worldwide)
