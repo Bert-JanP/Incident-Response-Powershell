@@ -1,13 +1,12 @@
 <#
 .DESCRIPTION
-    The DFIR Script collects information from multiple sources and structures the output in the current directory in a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end, so that folder can be remotely collected. This script can also be used within Defender For Endpoint in a Live Response session (see https://https://github.com/Bert-JanP/Incident-Response-Powershell).
+    The DFIR Script is a tool to perform incident response via PowerShell on compromised devices with an Windows Operating System (Workstation & Server). The content that the script can collect depends on the permissions of the user that executes the script, if executed with admin privileges more forensic artifacts can be collected.
+
+    The collected information is saved in an output directory in the current folder, this is by creating a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end to enable easy collection.
+    
+    This script can be integrated with Defender For Endpoint via Live Response sessions (see https://github.com/Bert-JanP/Incident-Response-Powershell).
 	
-	The script also provides the results as CSV to be inported in SIEM or Data Analysis tooling, the folder in which those files are located is named 'CSV Results (SIEM Data)'.
-
-.PARAMETER time
-    Description of each parameter used in the script or function.
-
-    You can provide additional information about the parameter here.
+	The script outputs the results as CSV to be imported in SIEM or data analysis tooling, the folder in which those files are located is named 'CSV Results (SIEM Import Data)'.
 
 .EXAMPLE
     Run Script without any parameters
@@ -16,8 +15,17 @@
     Define custom search window, this is done in days. Example below collects the Security Events from the last 10 days.
     .\DFIR-Script.ps1 -sw 10
 
+.LINK
+    Integration Defender For Endpoint Live Response: 
+    https://github.com/Bert-JanP/Incident-Response-Powershell
+    
+    Individual PowerShell Incident Response Commands: 
+    https://github.com/Bert-JanP/Incident-Response-Powershell/blob/main/DFIR-Commands.md
+
 .NOTES
     Any additional notes or information about the script or function.
+
+
 #>
 
 param(
@@ -25,17 +33,17 @@ param(
     )
 
 
-
+$Version = '2.0.0'
 $ASCIIBanner = @"
   _____                                           _              _   _     _____    ______   _____   _____  
  |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
  | |__) |   ___   __      __   ___   _ __   ___  | |__     ___  | | | |   | |  | | | |__      | |   | |__) |
  |  ___/   / _ \  \ \ /\ / /  / _ \ | '__| / __| | '_ \   / _ \ | | | |   | |  | | |  __|     | |   |  _  / 
  | |      | (_) |  \ V  V /  |  __/ | |    \__ \ | | | | |  __/ | | | |   | |__| | | |       _| |_  | | \ \ 
- |_|       \___/    \_/\_/    \___| |_|    |___/ |_| |_|  \___| |_| |_|   |_____/  |_|      |_____| |_|  \_\
+ |_|       \___/    \_/\_/    \___| |_|    |___/ |_| |_|  \___| |_| |_|   |_____/  |_|      |_____| |_|  \_\`n
 "@
 Write-Host $ASCIIBanner
-Write-Host "`n"
+Write-Host "Version: $Version"
 Write-Host "By twitter: @BertJanCyber, Github: Bert-JanP"
 Write-Host "===========================================`n"
 
@@ -54,7 +62,8 @@ else {
 Write-Host "Creating output directory..."
 $CurrentPath = $pwd
 $ExecutionTime = $(get-date -f yyyy-MM-dd)
-$FolderCreation = "$CurrentPath\..\DFIR-$env:computername-$ExecutionTime"
+$FolderCreation = "D:\Github\DFIR-$env:computername-$ExecutionTime"
+#$FolderCreation = "$CurrentPath\..\DFIR-$env:computername-$ExecutionTime"
 mkdir -Force $FolderCreation | Out-Null
 Write-Host "Output directory created: $FolderCreation..."
 
@@ -63,7 +72,7 @@ $currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentV
 Write-Host "Current user: $currentUsername $currentUserSid"
 
 #CSV Output for import in SIEM
-$CSVOutputFolder = "$FolderCreation\CSV Results (SIEM Data)"
+$CSVOutputFolder = "$FolderCreation\CSV Results (SIEM Import Data)"
 mkdir -Force $CSVOutputFolder | Out-Null
 Write-Host "SIEM Export Output directory created: $CSVOutputFolder..."
 
@@ -237,6 +246,7 @@ function Get-NetworkShares {
 	$CSVExportLocation = "$CSVOutputFolder\NetworkShares.csv"
 
     if($UserSid) {
+        write-host $UserSid
         Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
 		Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
@@ -461,8 +471,8 @@ function Run-WithoutAdminPrivilege {
 
 #Run all functions that do require admin priviliges
 function Run-WithAdminPrivilges {
-    Get-SecurityEventCount -time $sw
-    Get-SecurityEvents -time $sw
+    Get-SecurityEventCount $sw
+    Get-SecurityEvents $sw
     Get-RemotelyOpenedFiles
     Get-ShadowCopies
     Get-EventViewerFiles
