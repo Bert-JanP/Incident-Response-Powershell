@@ -36,6 +36,8 @@ For the best experience run the script as admin, then the following items will a
 - Windows Security Events
 - Remotely Opened Files
 - Shadow Copies
+- MPLogs
+- Defender Exclusions
 
 ## DFIR Commands
 The [DFIR Commands page](./DFIR-Commands.md) contains invidividual powershell commands that can be used during your incident response process. The follwing catagories are defined:

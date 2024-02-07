@@ -1,13 +1,49 @@
+<#
+.DESCRIPTION
+    The DFIR Script is a tool to perform incident response via PowerShell on compromised devices with an Windows Operating System (Workstation & Server). The content that the script can collect depends on the permissions of the user that executes the script, if executed with admin privileges more forensic artifacts can be collected.
+
+    The collected information is saved in an output directory in the current folder, this is by creating a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end to enable easy collection.
+    
+    This script can be integrated with Defender For Endpoint via Live Response sessions (see https://github.com/Bert-JanP/Incident-Response-Powershell).
+	
+	The script outputs the results as CSV to be imported in SIEM or data analysis tooling, the folder in which those files are located is named 'CSV Results (SIEM Import Data)'.
+
+.EXAMPLE
+    Run Script without any parameters
+    .\DFIR-Script.ps1
+.EXAMPLE
+    Define custom search window, this is done in days. Example below collects the Security Events from the last 10 days.
+    .\DFIR-Script.ps1 -sw 10
+
+.LINK
+    Integration Defender For Endpoint Live Response: 
+    https://github.com/Bert-JanP/Incident-Response-Powershell
+    
+    Individual PowerShell Incident Response Commands: 
+    https://github.com/Bert-JanP/Incident-Response-Powershell/blob/main/DFIR-Commands.md
+
+.NOTES
+    Any additional notes or information about the script or function.
+
+
+#>
+
+param(
+        [Parameter(Mandatory=$false)][int]$sw = 2 # Defines the custom search window, this is done in days.
+    )
+
+
+$Version = '2.0.0'
 $ASCIIBanner = @"
   _____                                           _              _   _     _____    ______   _____   _____  
  |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
  | |__) |   ___   __      __   ___   _ __   ___  | |__     ___  | | | |   | |  | | | |__      | |   | |__) |
  |  ___/   / _ \  \ \ /\ / /  / _ \ | '__| / __| | '_ \   / _ \ | | | |   | |  | | |  __|     | |   |  _  / 
  | |      | (_) |  \ V  V /  |  __/ | |    \__ \ | | | | |  __/ | | | |   | |__| | | |       _| |_  | | \ \ 
- |_|       \___/    \_/\_/    \___| |_|    |___/ |_| |_|  \___| |_| |_|   |_____/  |_|      |_____| |_|  \_\
+ |_|       \___/    \_/\_/    \___| |_|    |___/ |_| |_|  \___| |_| |_|   |_____/  |_|      |_____| |_|  \_\`n
 "@
 Write-Host $ASCIIBanner
-Write-Host "`n"
+Write-Host "Version: $Version"
 Write-Host "By twitter: @BertJanCyber, Github: Bert-JanP"
 Write-Host "===========================================`n"
 
@@ -26,7 +62,8 @@ else {
 Write-Host "Creating output directory..."
 $CurrentPath = $pwd
 $ExecutionTime = $(get-date -f yyyy-MM-dd)
-$FolderCreation = "$CurrentPath\DFIR-$env:computername-$ExecutionTime"
+$FolderCreation = "D:\Github\DFIR-$env:computername-$ExecutionTime"
+#$FolderCreation = "$CurrentPath\..\DFIR-$env:computername-$ExecutionTime"
 mkdir -Force $FolderCreation | Out-Null
 Write-Host "Output directory created: $FolderCreation..."
 
@@ -34,15 +71,24 @@ $currentUsername = (Get-WmiObject Win32_Process -f 'Name="explorer.exe"').GetOwn
 $currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | ForEach-Object{$_.PSChildName}
 Write-Host "Current user: $currentUsername $currentUserSid"
 
+#CSV Output for import in SIEM
+$CSVOutputFolder = "$FolderCreation\CSV Results (SIEM Import Data)"
+mkdir -Force $CSVOutputFolder | Out-Null
+Write-Host "SIEM Export Output directory created: $CSVOutputFolder..."
+
 function Get-IPInfo {
     Write-Host "Collecting local ip info..."
     $Ipinfoutput = "$FolderCreation\ipinfo.txt"
     Get-NetIPAddress | Out-File -Force -FilePath $Ipinfoutput
+	$CSVExportLocation = "$CSVOutputFolder\IPConfiguration.csv"
+	Get-NetIPAddress | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 function Get-ShadowCopies {
     Write-Host "Collecting Shadow Copies..."
     $ShadowCopy = "$FolderCreation\ShadowCopies.txt"
     Get-CimInstance Win32_ShadowCopy | Out-File -Force -FilePath $ShadowCopy
+	$CSVExportLocation = "$CSVOutputFolder\ShadowCopy.csv"
+	Get-CimInstance Win32_ShadowCopy | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-OpenConnections {
@@ -51,6 +97,8 @@ function Get-OpenConnections {
     mkdir -Force $ConnectionFolder | Out-Null
     $Ipinfoutput = "$ConnectionFolder\OpenConnections.txt"
     Get-NetTCPConnection -State Established | Out-File -Force -FilePath $Ipinfoutput
+	$CSVExportLocation = "$CSVOutputFolder\OpenTCPConnections.csv"
+	Get-NetTCPConnection -State Established | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-AutoRunInfo {
@@ -59,6 +107,8 @@ function Get-AutoRunInfo {
     mkdir -Force $AutoRunFolder | Out-Null
     $RegKeyOutput = "$AutoRunFolder\AutoRunInfo.txt"
     Get-CimInstance Win32_StartupCommand | Select-Object Name, command, Location, User | Format-List | Out-File -Force -FilePath $RegKeyOutput
+	$CSVExportLocation = "$CSVOutputFolder\AutoRun.csv"
+	Get-CimInstance Win32_StartupCommand | Select-Object Name, command, Location, User | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-InstalledDrivers {
@@ -66,6 +116,8 @@ function Get-InstalledDrivers {
     $AutoRunFolder = "$FolderCreation\Persistence"
     $RegKeyOutput = "$AutoRunFolder\InstalledDrivers.txt"
     driverquery | Out-File -Force -FilePath $RegKeyOutput
+	$CSVExportLocation = "$CSVOutputFolder\Drivers.csv"
+	(driverquery) -split "\n" -replace '\s\s+', ','  | Out-File -Force $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ActiveUsers {
@@ -74,6 +126,8 @@ function Get-ActiveUsers {
     mkdir -Force $UserFolder | Out-Null
     $ActiveUserOutput = "$UserFolder\ActiveUsers.txt"
     query user /server:$server | Out-File -Force -FilePath $ActiveUserOutput
+	$CSVExportLocation = "$CSVOutputFolder\ActiveUsers.csv"
+	(query user /server:$server) -split "\n" -replace '\s\s+', ','  | Out-File -Force -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-LocalUsers {
@@ -81,6 +135,8 @@ function Get-LocalUsers {
     $UserFolder = "$FolderCreation\UserInformation"
     $ActiveUserOutput = "$UserFolder\LocalUsers.txt"
     Get-LocalUser | Format-Table | Out-File -Force -FilePath $ActiveUserOutput
+	$CSVExportLocation = "$CSVOutputFolder\LocalUsers.csv"
+	Get-LocalUser | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ActiveProcesses {
@@ -89,6 +145,7 @@ function Get-ActiveProcesses {
     New-Item -Path $ProcessFolder -ItemType Directory -Force | Out-Null
     $UniqueProcessHashOutput = "$ProcessFolder\UniqueProcessHash.csv"
     $ProcessListOutput = "$ProcessFolder\ProcessList.csv"
+	$CSVExportLocation = "$CSVOutputFolder\Processes.csv"
 
     $processes_list = @()
     foreach ($process in (Get-WmiObject Win32_Process | Select-Object Name, ExecutablePath, CommandLine, ParentProcessId, ProcessId))
@@ -108,28 +165,38 @@ function Get-ActiveProcesses {
     }
 
     ($processes_list | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $UniqueProcessHashOutput
+	($processes_list | Select-Object Proc_Path, Proc_Hash -Unique).GetEnumerator() | Export-Csv -NoTypeInformation -Path $CSVExportLocation
     ($processes_list | Select-Object Proc_Name, Proc_Path, Proc_CommandLine, Proc_ParentProcessId, Proc_ProcessId, Proc_Hash).GetEnumerator() | Export-Csv -NoTypeInformation -Path $ProcessListOutput
+	
 }
 
 function Get-SecurityEventCount {
-    Write-Host "Collecting stats Security Events last 48 hours..."
+    param(
+        [Parameter(Mandatory=$true)][String]$sw
+    )
+    Write-Host "Collecting stats Security Events last $sw days..."
     $SecurityEvents = "$FolderCreation\SecurityEvents"
     mkdir -Force $SecurityEvents | Out-Null
     $ProcessOutput = "$SecurityEvents\EventCount.txt"
-    $SecurityEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-2)
+    $SecurityEvents = Get-EventLog -LogName security -After (Get-Date).AddDays(-$sw)
     $SecurityEvents | Group-Object -Property EventID -NoElement | Sort-Object -Property Count -Descending | Out-File -Force -FilePath $ProcessOutput
 }
 
 function Get-SecurityEvents {
-    Write-Host "Collecting Security Events last 48 hours..."
+    param(
+        [Parameter(Mandatory=$true)][String]$sw
+    )
+    Write-Host "Collecting Security Events last $sw days..."
     $SecurityEvents = "$FolderCreation\SecurityEvents"
     mkdir -Force $SecurityEvents | Out-Null
     $ProcessOutput = "$SecurityEvents\SecurityEvents.txt"
-    get-eventlog security -After (Get-Date).AddDays(-2) | Format-List * | Out-File -Force -FilePath $ProcessOutput
+    get-eventlog security -After (Get-Date).AddDays(-$sw) | Format-List * | Out-File -Force -FilePath $ProcessOutput
+	$CSVExportLocation = "$CSVOutputFolder\SecurityEvents.csv"
+	get-eventlog security -After (Get-Date).AddDays(-$sw) | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
-function Get-EVTXFiles {
-    Write-Host "Collecting Important EVTX Files..."
+function Get-EventViewerFiles {
+    Write-Host "Collecting Important Event Viewer Files..."
     $EventViewer = "$FolderCreation\Event Viewer"
     mkdir -Force $EventViewer | Out-Null
     $evtxPath = "C:\Windows\System32\winevt\Logs"
@@ -155,12 +222,16 @@ function Get-OfficeConnections {
     Write-Host "Collecting connections made from office applications..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $OfficeConnection = "$ConnectionFolder\ConnectionsMadeByOffice.txt"
+	$CSVExportLocation = "$CSVOutputFolder\OfficeConnections.csv"
+	
 
     if($UserSid) {
-        Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache*" -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection
+        Get-ChildItem -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache" -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection
+		Get-ChildItem -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache" -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
     else {
-        Get-ItemProperty -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache* -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
+		Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
 }
 
@@ -172,12 +243,16 @@ function Get-NetworkShares {
     Write-Host "Collecting Active Network Shares..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\NetworkShares.txt"
+	$CSVExportLocation = "$CSVOutputFolder\NetworkShares.csv"
 
     if($UserSid) {
+        write-host $UserSid
         Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
+		Get-ItemProperty -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\" -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
     else {
-        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ | Format-Table | Out-File -Force -FilePath $ProcessOutput
+        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ -erroraction 'silentlycontinue' | Format-Table | Out-File -Force -FilePath $ProcessOutput
+		Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\MountPoints2\ -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
 }
 
@@ -186,20 +261,26 @@ function Get-SMBShares {
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\SMBShares.txt"
     Get-SmbShare | Out-File -Force -FilePath $ProcessOutput
+	$CSVExportLocation = "$CSVOutputFolder\SMBShares.csv"
+	Get-SmbShare | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-RDPSessions {
     Write-Host "Collecting RDS Sessions..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\RDPSessions.txt"
+	$CSVExportLocation = "$CSVOutputFolder\RDPSessions.csv"
     qwinsta /server:localhost | Out-File -Force -FilePath $ProcessOutput
+	(qwinsta /server:localhost) -split "\n" -replace '\s\s+', ',' | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-RemotelyOpenedFiles {
     Write-Host "Collecting Remotly Opened Files..."
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\RemotelyOpenedFiles.txt"
+	$CSVExportLocation = "$CSVOutputFolder\RemotelyOpenedFiles.csv"
     openfiles | Out-File -Force -FilePath $ProcessOutput
+	(openfiles) -split "\n" -replace '\s\s+', ',' | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-DNSCache {
@@ -207,12 +288,16 @@ function Get-DNSCache {
     $ConnectionFolder = "$FolderCreation\Connections"
     $ProcessOutput = "$ConnectionFolder\DNSCache.txt"
     Get-DnsClientCache | Format-List | Out-File -Force -FilePath $ProcessOutput
+	$CSVExportLocation = "$CSVOutputFolder\DNSCache.csv"
+	Get-DnsClientCache | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-PowershellHistory {
     Write-Host "Collecting Powershell History..."
     $PowershellHistoryOutput = "$FolderCreation\PowershellHistory.txt"
     history | Out-File -Force -FilePath $PowershellHistoryOutput
+	$CSVExportLocation = "$CSVOutputFolder\PowerShellHistory.csv"
+	history | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-RecentlyInstalledSoftwareEventLogs {
@@ -221,6 +306,8 @@ function Get-RecentlyInstalledSoftwareEventLogs {
     mkdir -Force $ApplicationFolder | Out-Null
     $ProcessOutput = "$ApplicationFolder\RecentlyInstalledSoftwareEventLogs.txt"
     Get-WinEvent -ProviderName msiinstaller | where id -eq 1033 | select timecreated,message | FL *| Out-File -Force -FilePath $ProcessOutput
+	$CSVExportLocation = "$CSVOutputFolder\InstalledSoftware.csv"
+	Get-WinEvent -ProviderName msiinstaller | where id -eq 1033 | select timecreated,message | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-RunningServices {
@@ -228,6 +315,8 @@ function Get-RunningServices {
     $ApplicationFolder = "$FolderCreation\Applications"
     $ProcessOutput = "$ApplicationFolder\RecentlyInstalledSoftwareEventLogs.txt"
     Get-Service | Where-Object {$_.Status -eq "Running"} | format-list | Out-File -Force -FilePath $ProcessOutput
+	$CSVExportLocation = "$CSVOutputFolder\RunningServices.csv"
+	Get-Service | Where-Object {$_.Status -eq "Running"} | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ScheduledTasks {
@@ -236,13 +325,17 @@ function Get-ScheduledTasks {
     mkdir -Force $ScheduledTaskFolder| Out-Null
     $ProcessOutput = "$ScheduledTaskFolder\ScheduledTasksList.txt"
     Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Format-List | Out-File -Force -FilePath $ProcessOutput
+	$CSVExportLocation = "$CSVOutputFolder\ScheduledTasks.csv"
+	Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ScheduledTasksRunInfo {
     Write-Host "Collecting Scheduled Tasks Run Info..."
     $ScheduledTaskFolder = "$FolderCreation\ScheduledTask"
     $ProcessOutput = "$ScheduledTaskFolder\ScheduledTasksListRunInfo.txt"
+	$CSVExportLocation = "$CSVOutputFolder\ScheduledTasksRunInfo.csv"
     Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | Out-File -Force -FilePath $ProcessOutput
+	Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Get-ScheduledTaskInfo | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ConnectedDevices {
@@ -250,8 +343,9 @@ function Get-ConnectedDevices {
     $DeviceFolder = "$FolderCreation\ConnectedDevices"
     New-Item -Path $DeviceFolder -ItemType Directory -Force | Out-Null
     $ConnectedDevicesOutput = "$DeviceFolder\ConnectedDevices.csv"
-
     Get-PnpDevice | Export-Csv -NoTypeInformation -Path $ConnectedDevicesOutput
+	$CSVExportLocation = "$CSVOutputFolder\ConnectedDevices.csv"
+	Get-PnpDevice | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ChromiumFiles {
@@ -311,6 +405,34 @@ function Get-FirefoxFiles {
     }
 }
 
+function Get-MPLogs {
+	Write-Host "Collecting MPLogs..."
+	$MPLogFolder = "$FolderCreation\MPLogs"
+	New-Item -Path $MPLogFolder -ItemType Directory -Force | Out-Null
+	$MPLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support"
+	Copy-Item -Path $MPLogLocation -Destination $MPLogFolder -Recurse
+}
+
+function Get-DefenderExclusions {
+	Write-Host "Collecting Defender Exclusions..."
+	$DefenderExclusionFolder = "$FolderCreation\DefenderExclusions"
+	New-Item -Path $DefenderExclusionFolder -ItemType Directory -Force | Out-Null
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionPath | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionPath.txt"
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionExtension | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionExtension.txt"
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionIpAddress | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionIpAddress.txt"
+	Get-MpPreference | Select-Object -ExpandProperty ExclusionProcess | Out-File -Force -FilePath "$DefenderExclusionFolder\ExclusionProcess.txt"
+	
+	$CSVExportLocation = "$CSVOutputFolder\DefenderExclusions.csv"
+	$ExclusionPaths = (Get-MpPreference | Select-Object -ExpandProperty ExclusionPath) -join "`n"
+	$ExclusionExtensions = (Get-MpPreference | Select-Object -ExpandProperty ExclusionExtension) -join "`n"
+	$ExclusionIPAddresses = (Get-MpPreference | Select-Object -ExpandProperty ExclusionIpAddress) -join "`n"
+	$ExclusionProcesses = (Get-MpPreference | Select-Object -ExpandProperty ExclusionProcess) -join "`n"
+
+	# Combine all results into a single array
+	$combinedData = $ExclusionPaths, $ExclusionExtensions, $ExclusionIPAddresses, $ExclusionProcesses
+	$combinedData -split "\n" -replace '\s\s+', ',' | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+}
+
 function Zip-Results {
     Write-Host "Write results to $FolderCreation.zip..."
     Compress-Archive -Force -LiteralPath $FolderCreation -DestinationPath "$FolderCreation.zip"
@@ -348,12 +470,14 @@ function Run-WithoutAdminPrivilege {
 }
 
 #Run all functions that do require admin priviliges
-Function Run-WithAdminPrivilges {
-    Get-SecurityEventCount
-    Get-SecurityEvents
+function Run-WithAdminPrivilges {
+    Get-SecurityEventCount $sw
+    Get-SecurityEvents $sw
     Get-RemotelyOpenedFiles
     Get-ShadowCopies
-    Get-EVTXFiles
+    Get-EventViewerFiles
+	Get-MPLogs
+	Get-DefenderExclusions
 }
 
 Run-WithoutAdminPrivilege -UserSid $currentUserSid -Username $currentUsername
