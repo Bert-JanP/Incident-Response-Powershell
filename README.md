@@ -12,6 +12,10 @@ The following Incident Response scripts are included:
 - [ListInstalledSecurityProducts](./Scripts/ListInstalledSecurityProducts.ps1) - List the installed security products and their status.
 - [ListDefenderExclusions](./Scripts/ListDefenderExclusions.ps1) - List the FolderPath, FileExtension, Process and IP exclusions that are defined.
 
+## Related Blogs:
+- [Incident Response Part 3: Leveraging Live Response](https://kqlquery.com/posts/leveraging-live-response/)
+- [Incident Response PowerShell V2](https://kqlquery.com/posts/incident-response-powershell-v2/)
+
 ## DFIR Script - Extracted Artefacts
 The [DFIR script](./DFIR-Script.ps1) collects information from multiple sources and structures the output in the current directory in a folder named 'DFIR-_hostname_-_year_-_month_-_date_'. This folder is zipped at the end, so that folder can be remotely collected. This script can also be used within Defender For Endpoint in a Live Response session (see below). The DFIR script collects the following information when running as normal user:
 - Local IP Info
