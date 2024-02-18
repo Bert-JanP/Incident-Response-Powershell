@@ -194,6 +194,24 @@ foreach ($logName in $eventLogs) {
 $logEntries
 ```
 
+## Windows Security Events
+```PowerShell
+Get-EventLog -LogName Security
+```
+### Windows Security Events to CSV
+```PowerShell
+$ExecutionDate = $(get-date -f yyyy-MM-dd)
+$OutputName = "SecurityEvents-$ExecutionDate.csv"
+Get-EventLog -LogName Security | Export-Csv -Path $OutputName -NoTypeInformation
+if (Test-Path -Path $OutputName) {
+    $folderPath = (Get-Item $OutputName).DirectoryName
+    Write-Host "Output File Location: $folderPath\$OutputName"
+} else {
+    Write-Host "File does not exist."
+}
+```
+
+
 # Defender Exclusions
 List the defender exclusions that are defined for your (local) machine.
 
