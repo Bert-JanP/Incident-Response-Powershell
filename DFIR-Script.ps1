@@ -310,8 +310,8 @@ function Get-RecentlyInstalledSoftwareEventLogs {
 
 function Get-RunningServices {
     Write-Host "Collecting Running Services..."
-    $ApplicationFolder = "$FolderCreation\Applications"
-    $ProcessOutput = "$ApplicationFolder\RecentlyInstalledSoftwareEventLogs.txt"
+    $ApplicationFolder = "$FolderCreation\Services"
+    $ProcessOutput = "$ApplicationFolder\RunningServices.txt"
     Get-Service | Where-Object {$_.Status -eq "Running"} | format-list | Out-File -Force -FilePath $ProcessOutput
 	$CSVExportLocation = "$CSVOutputFolder\RunningServices.csv"
 	Get-Service | Where-Object {$_.Status -eq "Running"} | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
