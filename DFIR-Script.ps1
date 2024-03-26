@@ -426,11 +426,14 @@ function Get-FirefoxFiles {
 }
 
 function Get-MPLogs {
-	Write-Host "Collecting MPLogs..."
-	$MPLogFolder = "$FolderCreation\MPLogs"
-	New-Item -Path $MPLogFolder -ItemType Directory -Force | Out-Null
-	$MPLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support"
-	Copy-Item -Path $MPLogLocation -Destination $MPLogFolder -Recurse
+    Write-Host "Collecting MPLogs..."
+    $MPLogFolder = "$FolderCreation\MPLogs"
+    New-Item -Path $MPLogFolder -ItemType Directory -Force | Out-Null
+    $MPLogLocation = "C:\ProgramData\Microsoft\Windows Defender\Support\"
+    $MPListFiles = Get-ChildItem -Path $MPLogLocation -Name "*.log"
+    foreach ($file in $MPListFiles){
+    Copy-Item -Path $MPLogLocation$file -Destination $MPLogFolder
+    }
 }
 
 function Get-DefenderExclusions {
