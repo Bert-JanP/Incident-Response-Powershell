@@ -42,6 +42,7 @@ For the best experience run the script as admin, then the following items will a
 - Shadow Copies
 - MPLogs
 - Defender Exclusions
+- PowerShell History All Users
 
 ## SIEM Import Functionality
 The forensic artefacts are exported as CSV files, which allows responders to ingest them into their tooling. Some example tools in which you can ingest the data are Sentinel, Splunk, Elastic or Azure Data Explorer. This will allow you to perform filtering, aggregation and visualisation with your preferred query language. 

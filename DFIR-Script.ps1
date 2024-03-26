@@ -290,13 +290,34 @@ function Get-DNSCache {
 	Get-DnsClientCache | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
-function Get-PowershellHistory {
+function Get-PowershellHistoryCurrentUser {
     Write-Host "Collecting Powershell History..."
-    $PowershellHistoryOutput = "$FolderCreation\PowershellHistory.txt"
+    $PowershellConsoleHistory = "$FolderCreation\PowerShellHistory"
+    mkdir -Force $PowershellConsoleHistory | Out-Null
+    $PowershellHistoryOutput = "$PowershellConsoleHistory\PowershellHistoryCurrentUser.txt"
     history | Out-File -Force -FilePath $PowershellHistoryOutput
-	$CSVExportLocation = "$CSVOutputFolder\PowerShellHistory.csv"
+    $CSVExportLocation = "$CSVOutputFolder\PowerShellHistory.csv"
 	history | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
+
+function Get-PowershellConsoleHistory-AllUsers {
+    Write-Host "Collection Console Powershell History All Users..."
+    $PowershellConsoleHistory = "$FolderCreation\PowerShellHistory"
+    # Specify the directory where user profiles are stored
+    $usersDirectory = "C:\Users"
+    # Get a list of all user directories in C:\Users
+    $userDirectories = Get-ChildItem -Path $usersDirectory -Directory
+    foreach ($userDir in $userDirectories) {
+        $userName = $userDir.Name
+        $historyFilePath = Join-Path -Path $userDir.FullName -ChildPath "AppData\Roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+        if (Test-Path -Path $historyFilePath -PathType Leaf) {
+            $outputDirectory = "$PowershellConsoleHistory\$userDir.Name"
+            mkdir -Force $outputDirectory | Out-Null
+            Copy-Item -Path $historyFilePath -Destination $outputDirectory -Force
+            }
+        }
+}    
+
 
 function Get-RecentlyInstalledSoftwareEventLogs {
     Write-Host "Collecting Recently Installed Software EventLogs..."
@@ -454,7 +475,7 @@ function Run-WithoutAdminPrivilege {
     Get-NetworkShares -UserSid $UserSid
     Get-SMBShares
     Get-RDPSessions
-    Get-PowershellHistory
+    Get-PowershellHistoryCurrentUser
     Get-DNSCache
     Get-InstalledDrivers    
     Get-RecentlyInstalledSoftwareEventLogs
@@ -477,6 +498,7 @@ function Run-WithAdminPrivilges {
     Get-EventViewerFiles
 	Get-MPLogs
 	Get-DefenderExclusions
+    Get-PowershellConsoleHistory-AllUsers
 }
 
 Run-WithoutAdminPrivilege -UserSid $currentUserSid -Username $currentUsername
