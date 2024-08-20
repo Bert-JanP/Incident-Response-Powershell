@@ -3,7 +3,7 @@
 This repository contains multiple PowerShell scripts that can help you respond to cyber attacks on Windows Devices.
 
 The following Incident Response scripts are included:
-- [DFIR Script](./DFIR-Script.ps1): Collects all items as listed in section [DFIR Script](#dfir-script).
+- [DFIR Script](./DFIR-Script.ps1): Collects all items as listed in section [DFIR Script](#dfir-script---extracted-artefacts).
 - [CollectWindowsEvents](./Scripts/CollectWindowsEvents.ps1): Collects all Windows events and outputs it as CSV.
 - [CollectWindowsSecurityEvents](./Scripts/CollectWindowsSecurityEvents.ps1): Collects all Windows security events and outputs it as CSV.
 - [CollectPnPDevices](./Scripts/CollectPnPDevices.ps1): Collects all Plug and Play devices, such as USB, Network and Storage.
