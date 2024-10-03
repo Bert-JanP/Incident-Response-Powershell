@@ -33,7 +33,7 @@ param(
     )
 
 
-$Version = '2.1.0'
+$Version = '2.2.0'
 $ASCIIBanner = @"
   _____                                           _              _   _     _____    ______   _____   _____  
  |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
@@ -344,9 +344,9 @@ function Get-ScheduledTasks {
     $ScheduledTaskFolder = "$FolderCreation\ScheduledTask"
     mkdir -Force $ScheduledTaskFolder| Out-Null
     $ProcessOutput = "$ScheduledTaskFolder\ScheduledTasksList.txt"
-    Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | Format-List | Out-File -Force -FilePath $ProcessOutput
+    Get-ScheduledTask | Where-Object {($_.State -ne 'Disabled') -and (($_.LastRunTime -eq $null) -or ($_.LastRunTime -gt (Get-Date).AddDays(-7)))} | Format-List | Out-File -Force -FilePath $ProcessOutput
 	$CSVExportLocation = "$CSVOutputFolder\ScheduledTasks.csv"
-	Get-ScheduledTask | Where-Object {$_.State -ne "Disabled"} | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+	Get-ScheduledTask | Where-Object {($_.State -ne 'Disabled') -and (($_.LastRunTime -eq $null) -or ($_.LastRunTime -gt (Get-Date).AddDays(-7)))} | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
 
 function Get-ScheduledTasksRunInfo {
