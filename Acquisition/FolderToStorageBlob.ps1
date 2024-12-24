@@ -1,4 +1,4 @@
-# Uploads the current directory to a storage blob container
+# Uploads the current directory contents to a storage blob container
 
 # If 'PublicAccessNotPermittedPublic access is not permitted on this storage account error' is thrown have a look at:
 # https://techcommunity.microsoft.com/blog/azurepaasblog/public-access-is-not-permitted-on-this-storage-account/3521288
