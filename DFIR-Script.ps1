@@ -75,6 +75,9 @@ $CSVOutputFolder = "$FolderCreation\CSV Results (SIEM Import Data)"
 mkdir -Force $CSVOutputFolder | Out-Null
 Write-Host "SIEM Export Output directory created: $CSVOutputFolder..."
 
+#Search Window
+Write-Host "Collecting data from last $sw days"
+
 function Get-IPInfo {
     Write-Host "Collecting local ip info..."
     $Ipinfoutput = "$FolderCreation\ipinfo.txt"
