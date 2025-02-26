@@ -117,7 +117,7 @@ Execute script:
 - Go to the device page
 - Initiate Live Response session
 - Upload File to library to upload script
-- After uploading the script to the library execute: ```run DFIR-script.ps1``` to start the script.
+- After uploading the script to the library execute: ```run DFIR-script.ps1``` to start the script. If you want to run the script using parameters, you should run ```run DFIR-Script.ps1 -parameters "-sw 10"```.
 - Execute ```getfile DFIR-DeviceName-yyyy-mm-dd``` to download the retrieved artifacts to your local machine for analysis.
 
 ### Docs
