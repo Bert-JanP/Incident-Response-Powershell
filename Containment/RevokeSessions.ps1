@@ -1,4 +1,8 @@
-# Docs: https://learn.microsoft.com/en-us/graph/api/user-revokesigninsessions?view=graph-rest-1.0&tabs=http
+<#
+.Description: Resets the active sessions of all users in the defined list.
+.Documentation: https://learn.microsoft.com/en-us/graph/api/user-revokesigninsessions?view=graph-rest-1.0&tabs=http
+.Required Permissions: User.RevokeSessions.All	
+#>
 
 Connect-MgGraph -Scopes User.RevokeSessions.All	
 

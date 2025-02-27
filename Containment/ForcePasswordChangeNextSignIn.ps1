@@ -1,5 +1,8 @@
-# Docs: https://learn.microsoft.com/en-us/graph/api/authenticationmethod-resetpassword?view=graph-rest-1.0&tabs=http
-# Changes the users password with a new random password, this new password has to be changed on the first SignIn of the user.
+<#
+.Description: Changes the users password with a new random password, this new password has to be changed on the first SignIn of the user.
+.Documentation: https://learn.microsoft.com/en-us/graph/api/authenticationmethod-resetpassword?view=graph-rest-1.0&tabs=http
+.Required Permissions: UserAuthenticationMethod.ReadWrite.All
+#>
 
 Connect-MgGraph -Scopes UserAuthenticationMethod.ReadWrite.All
 
