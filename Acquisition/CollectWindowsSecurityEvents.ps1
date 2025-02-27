@@ -1,3 +1,9 @@
+<#
+.Description: Collects the security events from a device.
+.Documentation: -
+.Required Permissions: Administrator
+#>
+
 $ExecutionDate = $(get-date -f yyyy-MM-dd)
 $OutputName = "SecurityEvents-$ExecutionDate.csv"
 Get-EventLog -LogName Security | Export-Csv -Path $OutputName -NoTypeInformation

@@ -1,3 +1,9 @@
+<#
+.Description: Collects the application, system and security events from a device.
+.Documentation: -
+.Required Permissions: Administrator
+#>
+
 $ExecutionDate = $(get-date -f yyyy-MM-dd)
 $OutputName = "WindowsEvents-$ExecutionDate.csv"
 # Initialize an empty array to store event log entries

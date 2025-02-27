@@ -1,7 +1,10 @@
-# Uploads the current directory contents to a storage blob container
-
-# If 'PublicAccessNotPermittedPublic access is not permitted on this storage account error' is thrown have a look at:
-# https://techcommunity.microsoft.com/blog/azurepaasblog/public-access-is-not-permitted-on-this-storage-account/3521288
+<#
+.Description: Uploads the current directory contents to a storage blob container
+.Documentation: https://learn.microsoft.com/en-us/graph/api/authenticationmethod-resetpassword?view=graph-rest-1.0&tabs=http
+.Required Permissions: Contributor Permissions Storage Blob
+.Common Errors: If 'PublicAccessNotPermittedPublic access is not permitted on this storage account error' is thrown read:
+	https://techcommunity.microsoft.com/blog/azurepaasblog/public-access-is-not-permitted-on-this-storage-account/3521288
+#>
 
 # Variables
 $StorageAccountName = '<StorageAcountName>'

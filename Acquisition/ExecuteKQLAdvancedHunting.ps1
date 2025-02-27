@@ -1,5 +1,8 @@
-# Docs: https://learn.microsoft.com/en-us/graph/api/security-security-runhuntingquery?view=graph-rest-1.0&tabs=powershell
-# Runs a KQL hunting query using PowerShell.
+<#
+.Description: Runs a KQL Advanced Hunting query using PowerShell.
+.Documentation: https://learn.microsoft.com/en-us/graph/api/security-security-runhuntingquery?view=graph-rest-1.0&tabs=powershell
+.Required Permissions: ThreatHunting.Read.All
+#>
 
 # Set the query you want to execute
 $KQL = 'DeviceEvents | where ActionType startswith "asr" | project Timestamp, DeviceName, ActionType | take 50'
