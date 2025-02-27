@@ -1,3 +1,10 @@
+<#
+.Description: Lists the installed AntiSpywareProduct, AntiVirusProduct and FirewallProduct.
+.Documentation: -
+.Required Permissions: User
+#>
+
+
 function ListSecurityProducts {
 	Write-Host "AntiSpywareProduct:"
 	Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntiSpywareProduct | Select-Object -Property displayName, instanceGuid, pathToSignedProductExe, pathToSignedReportingExe, productState, @{Name='CustomProductState';Expression={ 

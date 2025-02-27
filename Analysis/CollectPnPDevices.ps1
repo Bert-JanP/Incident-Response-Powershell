@@ -1,3 +1,10 @@
+<#
+.Description: Returns all Plug and Play devices
+.Documentation: https://learn.microsoft.com/en-us/windows-hardware/drivers/kernel/introduction-to-plug-and-play
+.Required Permissions: User
+#>
+
+
 $deviceClasses = @(
     'Net',
     'USB',
