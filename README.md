@@ -1,16 +1,6 @@
-# Powershell Digital Forensics & Incident Response (DFIR)[![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Powershell%20DFIR!&url=https://github.com/Bert-JanP/Incident-Response-Powershell)
-
+# Powershell Digital Forensics & Incident Response (DFIR)
 This repository contains multiple PowerShell scripts that can help you respond to cyber attacks on Windows Devices.
 
-The following Incident Response scripts are included:
-- [DFIR Script](./DFIR-Script.ps1): Collects all items as listed in section [DFIR Script](#dfir-script---extracted-artefacts).
-- [CollectWindowsEvents](./Scripts/CollectWindowsEvents.ps1): Collects all Windows events and outputs it as CSV.
-- [CollectWindowsSecurityEvents](./Scripts/CollectWindowsSecurityEvents.ps1): Collects all Windows security events and outputs it as CSV.
-- [CollectPnPDevices](./Scripts/CollectPnPDevices.ps1): Collects all Plug and Play devices, such as USB, Network and Storage.
-- [DumpLocalAdmins](./Scripts/DumpLocalAdmins.ps1): Returns all local admins of a device.
-- [LastLogons](./Scripts/LastLogons.ps1) - List the last N successful logins of a device.
-- [ListInstalledSecurityProducts](./Scripts/ListInstalledSecurityProducts.ps1) - List the installed security products and their status.
-- [ListDefenderExclusions](./Scripts/ListDefenderExclusions.ps1) - List the FolderPath, FileExtension, Process and IP exclusions that are defined.
 
 ## Related Blogs:
 - [Incident Response Part 3: Leveraging Live Response](https://kqlquery.com/posts/leveraging-live-response/)
