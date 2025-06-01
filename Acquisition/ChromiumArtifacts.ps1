@@ -9,6 +9,7 @@
     .\ChromiumArtifacts.ps1 -Username "JohnDoe" -CollectAllArtifacts
     .\ChromiumArtifacts.ps1 -AllUsers
     .\ChromiumArtifacts.ps1 -AllUsers -CollectAllArtifacts
+.Credits: Continued Development based on initial commit of https://github.com/flimbot & https://github.com/Bert-JanP/Incident-Response-Powershell/commit/cea7ad075b33c0003eeb3b181d2709a8e5fa7002
 #>
 
 param (
