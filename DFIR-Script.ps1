@@ -385,6 +385,10 @@ function Get-ChromiumFiles {
         'History'
     )
 
+    $dirsToCopy = @(
+        'IndexedDB'
+    )
+
     Get-ChildItem "C:\Users\$Username\AppData\Local\*\*\User Data\*\" | Where-Object { `
         (Test-Path "$_\History") -and `
         [char[]](Get-Content "$($_.FullName)\History" -Encoding byte -TotalCount 'SQLite format'.Length) -join ''
@@ -395,6 +399,23 @@ function Get-ChromiumFiles {
 
         $filesToCopy | ForEach-Object{
             $filesToCopy | Where-Object{ Test-Path "$srcpath\$_" } | ForEach-Object{ Copy-Item -Path "$srcpath\$_" -Destination "$destpath\$_" }
+        }
+
+        foreach ( $fname in $filesToCopy ) {
+            $srcfile = Join-Path $srcpath $fname
+            $destfile = Join-Path $destpath $fname
+            if ( Test-Path $srcfile ) {
+                Copy-Item -Path $srcfile -Destination $destfile -Force
+            }
+        }
+
+        foreach ( $reldir in $dirsToCopy ) {
+            $srcdir = Join-Path $srcpath $reldir
+            $destdir = Join-Path $destpath $reldir
+            if ( Test-Path $srcdir ) {
+                New-Item -Path $destdir -ItemType Directory -Force | Out-Null
+                Copy-Item -Path "$srcdir\*" -Destination $destdir -Recurse -Force
+            }
         }
     }
 }
