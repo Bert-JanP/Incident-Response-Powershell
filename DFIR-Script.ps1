@@ -33,7 +33,7 @@ param(
     )
 
 
-$Version = '2.2.0'
+$Version = '2.2.1'
 $ASCIIBanner = @"
   _____                                           _              _   _     _____    ______   _____   _____  
  |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
@@ -44,7 +44,7 @@ $ASCIIBanner = @"
 "@
 Write-Host $ASCIIBanner
 Write-Host "Version: $Version"
-Write-Host "By twitter: @BertJanCyber, Github: Bert-JanP"
+Write-Host "Developed by Bert-Jan Pals | Twitter: @BertJanCyber | Github: Bert-JanP"
 Write-Host "===========================================`n"
 
 $IsAdmin = ([Security.Principal.WindowsPrincipal] `
@@ -82,6 +82,8 @@ function Get-IPInfo {
     Write-Host "Collecting local ip info..."
     $Ipinfoutput = "$FolderCreation\ipinfo.txt"
     Get-NetIPAddress | Out-File -Force -FilePath $Ipinfoutput
+    $Ipconfigoutput = "$FolderCreation\ipconfig.txt"
+    powershell.exe ipconfig /all | Out-File -Force -FilePath $Ipconfigoutput
 	$CSVExportLocation = "$CSVOutputFolder\IPConfiguration.csv"
 	Get-NetIPAddress | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
 }
