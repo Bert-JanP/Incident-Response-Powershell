@@ -17,7 +17,7 @@
 
 .LINK
     Integration Defender For Endpoint Live Response: 
-    https://github.com/Bert-JanP/Incident-Response-Powershell
+    https://github.com/Bert-JanP/Incident-Response-Powershell & https://kqlquery.com/posts/leveraging-live-response/
     
     Individual PowerShell Incident Response Commands: 
     https://github.com/Bert-JanP/Incident-Response-Powershell/blob/main/DFIR-Commands.md
@@ -33,7 +33,7 @@ param(
     )
 
 
-$Version = '2.2.1'
+$Version = '2.2.2'
 $ASCIIBanner = @"
   _____                                           _              _   _     _____    ______   _____   _____  
  |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
