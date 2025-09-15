@@ -42,10 +42,19 @@ $ASCIIBanner = @"
  | |      | (_) |  \ V  V /  |  __/ | |    \__ \ | | | | |  __/ | | | |   | |__| | | |       _| |_  | | \ \ 
  |_|       \___/    \_/\_/    \___| |_|    |___/ |_| |_|  \___| |_| |_|   |_____/  |_|      |_____| |_|  \_\`n
 "@
-Write-Host $ASCIIBanner
-Write-Host "Version: $Version"
-Write-Host "Developed by Bert-Jan Pals | Twitter: @BertJanCyber | Github: Bert-JanP"
-Write-Host "===========================================`n"
+Write-Host $ASCIIBanner -ForegroundColor Cyan
+Write-Host "Version: $Version" -ForegroundColor Cyan
+Write-Host "Developed by Bert-Jan Pals | Twitter: @BertJanCyber | Github: Bert-JanP" -ForegroundColor Cyan
+Write-Host "===========================================" -ForegroundColor Black
+$HostName = $env:COMPUTERNAME
+$OSProductName = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name 'ProductName').ProductName
+$OSBuild = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' -Name 'CurrentBuild').CurrentBuild
+Write-Host  -ForegroundColor Cyan
+Write-Host "Host Inforation`n (HostName: $HostName | OS: $OSProductName | OS Build: $OSBuild)" -ForegroundColor Cyan
+
+$currentUsername = $($env:USERNAME)
+$currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | ForEach-Object{$_.PSChildName}
+Write-Host "Current user: $currentUsername $currentUserSid" -ForegroundColor Cyan
 
 $IsAdmin = ([Security.Principal.WindowsPrincipal] `
         [Security.Principal.WindowsIdentity]::GetCurrent() `
@@ -55,7 +64,7 @@ if ($IsAdmin) {
     Write-Host "DFIR Session starting as Administrator..."
 }
 else {
-    Write-Host "No Administrator session detected. For the best performance run as Administrator. Not all items can be collected..."
+    Write-Host "No Administrator session detected. For the best performance run as Administrator. Not all artifacts can be collected..." -ForegroundColor Red
     Write-Host "DFIR Session starting..."
 }
 
@@ -65,10 +74,6 @@ $ExecutionTime = $(get-date -f yyyy-MM-dd)
 $FolderCreation = "$CurrentPath\DFIR-$env:computername-$ExecutionTime"
 mkdir -Force $FolderCreation | Out-Null
 Write-Host "Output directory created: $FolderCreation..."
-
-$currentUsername = (Get-WmiObject Win32_Process -f 'Name="explorer.exe"').GetOwner().User
-$currentUserSid = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*' | Where-Object {$_.PSChildName -match 'S-1-5-21-\d+-\d+\-\d+\-\d+$' -and $_.ProfileImagePath -match "\\$currentUsername$"} | ForEach-Object{$_.PSChildName}
-Write-Host "Current user: $currentUsername $currentUserSid"
 
 #CSV Output for import in SIEM
 $CSVOutputFolder = "$FolderCreation\CSV Results (SIEM Import Data)"
