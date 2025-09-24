@@ -21,11 +21,6 @@
     
     Individual PowerShell Incident Response Commands: 
     https://github.com/Bert-JanP/Incident-Response-Powershell/blob/main/DFIR-Commands.md
-
-.NOTES
-    Any additional notes or information about the script or function.
-
-
 #>
 
 param(
