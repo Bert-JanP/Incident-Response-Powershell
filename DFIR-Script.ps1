@@ -113,6 +113,24 @@ function Get-AutoRunInfo {
     Get-CimInstance Win32_StartupCommand | Select-Object Name, command, Location, User | Format-List | Out-File -Force -FilePath $RegKeyOutput
 	$CSVExportLocation = "$CSVOutputFolder\AutoRun.csv"
 	Get-CimInstance Win32_StartupCommand | Select-Object Name, command, Location, User | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+
+    # Win32 Registry Run/RunOnce Keys:
+    $RegKeyOutputWin32 = "$AutoRunFolder\Win32RegRunKey.txt"
+    Get-ItemProperty -Path HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce | Format-List | Out-File -Force -FilePath $RegKeyOutputWin32
+    Get-ItemProperty -Path HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run | Format-List | Out-File -Append -Force -FilePath $RegKeyOutputWin32
+    $CSVExportLocation = "$CSVOutputFolder\Win32RegRunKey.csv"
+
+    $results = @()
+    $keys = @(
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run",
+    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\RunOnce"
+    )
+    foreach ($key in $keys) {
+        $results += Get-ItemProperty -Path $key
+    }
+
+	$results | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+
 }
 
 function Get-InstalledDrivers {
