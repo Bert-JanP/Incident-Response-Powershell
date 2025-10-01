@@ -28,7 +28,7 @@ param(
     )
 
 
-$Version = '2.2.2'
+$Version = '2.2.4'
 $ASCIIBanner = @"
   _____                                           _              _   _     _____    ______   _____   _____  
  |  __ \                                         | |            | | | |   |  __ \  |  ____| |_   _| |  __ \ 
@@ -252,8 +252,12 @@ function Get-OfficeConnections {
 		Get-ChildItem -Path "registry::HKEY_USERS\$UserSid\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache" -erroraction 'silentlycontinue' | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
     }
     else {
-        Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection 
-		Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -erroraction 'silentlycontinue' | Out-File -Force -FilePath $OfficeConnection | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+        try {
+            Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -ErrorAction Stop | Out-File -Force -FilePath $OfficeConnection
+            Get-ChildItem -Path HKCU:\SOFTWARE\Microsoft\Office\16.0\Common\Internet\Server Cache -ErrorAction Stop | ConvertTo-Csv -NoTypeInformation | Out-File -FilePath $CSVExportLocation -Encoding UTF8
+        } catch {
+            Write-Host " Office Server Cache registry not found: $($_.Exception.Message)" -ForegroundColor Red
+        }
     }
 }
 
