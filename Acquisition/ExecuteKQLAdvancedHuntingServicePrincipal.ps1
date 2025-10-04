@@ -33,7 +33,6 @@ foreach ($row in $rows) {
     $obj = New-Object PSObject
     foreach ($key in $allKeys) {
         $value = $row.AdditionalProperties[$key]
-        # Optionally, flatten arrays or objects to strings
         if ($value -is [System.Collections.IEnumerable] -and -not ($value -is [string])) {
             $obj | Add-Member -NotePropertyName $key -NotePropertyValue ($value -join ", ")
         } else {
