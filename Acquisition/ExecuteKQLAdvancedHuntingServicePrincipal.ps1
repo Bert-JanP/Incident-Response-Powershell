@@ -11,7 +11,6 @@ $Secret = "<Secret>" #Certificate Authentication is recommended.
 $SecureClientSecret = ConvertTo-SecureString -String $Secret -AsPlainText -Force
 $ClientSecretCredential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $AppID, $SecureClientSecret
 
-
 # Set the query you want to execute
 $KQL = 'DeviceEvents | where ActionType startswith "asr" | project Timestamp, DeviceName, ActionType | take 50'
 
@@ -26,13 +25,23 @@ $params = @{
 
 $Results = Start-MgSecurityHuntingQuery -BodyParameter $params
 
-$Results.Results
+$rows = @($Results.Results)
+$allKeys = $rows | ForEach-Object { $_.AdditionalProperties.Keys } | Select-Object -Unique
 
-$Results.Results | ForEach-Object {
-    [PSCustomObject]@{
-        Timestamp = $_.AdditionalProperties["Timestamp"]
-        DeviceName = $_.AdditionalProperties["DeviceName"]
-        ActionType = $_.AdditionalProperties["ActionType"]
-        # Add other properties as needed
+$table = @()
+foreach ($row in $rows) {
+    $obj = New-Object PSObject
+    foreach ($key in $allKeys) {
+        $value = $row.AdditionalProperties[$key]
+        # Optionally, flatten arrays or objects to strings
+        if ($value -is [System.Collections.IEnumerable] -and -not ($value -is [string])) {
+            $obj | Add-Member -NotePropertyName $key -NotePropertyValue ($value -join ", ")
+        } else {
+            $obj | Add-Member -NotePropertyName $key -NotePropertyValue $value
+        }
     }
-} | Format-Table -AutoSize
+    $table += $obj
+}
+$table | Format-Table -Property $allKeys -AutoSize
+#Export to csv
+$table | Export-CSV .\QueryExport.csv -NoTypeInformation
