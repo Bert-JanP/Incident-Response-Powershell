@@ -44,4 +44,4 @@ foreach ($row in $rows) {
 }
 $table | Format-Table -Property $allKeys -AutoSize
 #Export to csv
-$table | Export-CSV .\QueryExport.csv -NoTypeInformation
+# $table | Export-CSV .\QueryExport.csv -NoTypeInformation
